@@ -283,6 +283,11 @@ const GlobalStyles = () => (
       h2.section-title {
         font-size: 1.6rem !important;
       }
+      .mobile-column {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 16px !important;
+      }
     }
 
     @media (max-width: 400px) {
@@ -1303,7 +1308,7 @@ function AuthView({ role, onBack, db, showToast, handleAdminLogin, setSession, o
           {isLogin && (
             <div style={{ background: 'rgba(128,128,128,0.1)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '0.85rem' }}>
               <strong>Demo Accounts:</strong><br/>
-              {role === 'stall' ? 'burger@stall.com / password' : 'foodie@test.com / password'}
+              {role === 'admin' ? 'FAAC / FAAC' : role === 'stall' ? 'burger@stall.com / password' : 'foodie@test.com / password'}
             </div>
           )}
           
@@ -1616,7 +1621,7 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
             <div className="flex-col gap-4" style={{ maxWidth: '800px' }}>
               {myOrders.map(order => (
                 <div key={order.id} className="card">
-                  <div className="flex justify-between items-center" style={{ marginBottom: '16px' }}>
+                  <div className="flex justify-between items-center order-header" style={{ marginBottom: '16px' }}>
                     <h3 style={{ margin: 0 }}>{order.stall_name}</h3>
                     <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>₹{Number(order.total).toFixed(2)}</span>
                   </div>
@@ -1900,7 +1905,7 @@ function StallDashboard({ db, session, showToast, setSession, onLogout, onToggle
                 return (
                   <div key={order.id} className="card flex-col justify-between">
                     <div>
-                      <div className="flex justify-between items-start" style={{ marginBottom: '16px' }}>
+                      <div className="flex justify-between items-start order-header" style={{ marginBottom: '16px' }}>
                         <div>
                           <h3 style={{ margin: '0 0 4px 0', fontSize: '1.2rem' }}>Order #{order.id.split('-')[0].toUpperCase()}</h3>
                           <span style={{ opacity: 0.8, fontSize: '0.9rem' }}>👤 {customerName}</span>
@@ -1963,7 +1968,7 @@ function StallDashboard({ db, session, showToast, setSession, onLogout, onToggle
                       </div>
                     </form>
                   ) : (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mobile-column">
                       <div className="flex items-center gap-4">
                         <span style={{ fontSize: '2rem' }}>{item.emoji}</span>
                         <div>
@@ -2069,7 +2074,7 @@ function AdminDashboard({ db, showToast, onLogout, onToggleTheme, theme }) {
           <h2 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Recent Orders</h2>
           <div className="flex-col gap-4">
             {orders.slice(0, 10).map(o => (
-               <div key={o.id} className="card flex justify-between items-center">
+               <div key={o.id} className="card flex justify-between items-center admin-order-row">
                  <div>
                    <span className="badge" style={{ marginRight: '8px' }}>{o.status}</span>
                    <span style={{ fontWeight: 'bold' }}>₹{Number(o.total).toFixed(2)}</span>
