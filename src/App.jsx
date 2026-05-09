@@ -914,7 +914,6 @@ export default function FoodAtAClick() {
         let hasData = profiles.length > 0 || menuItems.length > 0 || orders.length > 0 || reviews.length > 0;
         
         if (!hasData) {
-          showToast("AWS database is empty. Initializing with mock data...", "info");
           await Promise.all([
             ...INITIAL_MOCK_DATA.profiles.map(p => fetch(`${API_URL}/profiles`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) })),
             ...INITIAL_MOCK_DATA.menuItems.map(m => fetch(`${API_URL}/menuItems`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(m) })),
@@ -922,7 +921,6 @@ export default function FoodAtAClick() {
             ...INITIAL_MOCK_DATA.reviews.map(r => fetch(`${API_URL}/reviews`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) }))
           ]);
           setDbData(INITIAL_MOCK_DATA);
-          showToast("AWS database seeded successfully!", "success");
         } else {
           setDbData({
             profiles: profiles.length > 0 ? profiles : INITIAL_MOCK_DATA.profiles,
@@ -930,11 +928,9 @@ export default function FoodAtAClick() {
             orders: orders,
             reviews: reviews
           });
-          showToast("Loaded real-time data from AWS DynamoDB!", "success");
         }
       } catch (e) {
         console.error("Failed to load data from AWS:", e);
-        showToast("Using local backup database", "info");
       }
     };
 
@@ -958,7 +954,6 @@ export default function FoodAtAClick() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(p)
           });
-          showToast("Profile synced to AWS! 🚀", "success");
         } catch (e) { console.error(e); }
       }
     },
@@ -1130,10 +1125,12 @@ export default function FoodAtAClick() {
   return (
     <>
       <GlobalStyles />
-      {/* Fixed theme toggle — hidden on mobile via CSS (mobile topbar has its own) */}
-      <button className="theme-toggle card desktop-only-theme" onClick={toggleTheme}>
-        {theme === 'light' ? '🌙' : '☀️'}
-      </button>
+      {/* Fixed theme toggle — only shown on dashboard (landing/auth have their own inline toggle) */}
+      {currentView === 'dashboard' && session && (
+        <button className="theme-toggle card desktop-only-theme" onClick={toggleTheme}>
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+      )}
 
       {currentView === 'landing' && (
         <LandingView
