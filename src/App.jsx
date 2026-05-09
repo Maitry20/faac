@@ -67,6 +67,7 @@ const GlobalStyles = () => (
     }
     .sidebar {
       width: 250px;
+      min-width: 250px;
       background: var(--current-card);
       padding: 32px 24px;
       display: flex;
@@ -103,6 +104,7 @@ const GlobalStyles = () => (
       box-sizing: border-box;
       max-width: 1200px;
       margin: 0 auto;
+      min-width: 0;
     }
     .top-banner {
       width: 100%;
@@ -112,6 +114,187 @@ const GlobalStyles = () => (
       margin-bottom: 32px;
       box-shadow: 0 12px 32px rgba(0,0,0,0.08);
       border: 4px solid white;
+    }
+
+    /* ── Mobile Nav Bar ── */
+    .mobile-topbar {
+      display: none;
+    }
+    .mobile-nav {
+      display: none;
+    }
+
+    /* ── Mobile breakpoint ── */
+    @media (max-width: 768px) {
+      .app-layout {
+        flex-direction: column;
+      }
+      .sidebar {
+        display: none !important;
+      }
+      .main-content {
+        padding: 16px 16px 90px;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: visible;
+        max-width: 100%;
+        width: 100%;
+      }
+      /* Top bar with logo + theme toggle */
+      .mobile-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 200;
+        background: var(--current-card);
+        padding: 12px 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      }
+      .mobile-topbar h2 {
+        font-size: 1.3rem;
+        margin: 0;
+        color: var(--current-primary);
+        line-height: 1;
+      }
+      /* Bottom nav bar */
+      .mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
+        background: var(--current-card);
+        border-top: 2px solid rgba(128,128,128,0.1);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+        justify-content: space-around;
+        align-items: center;
+        padding: 6px 0 env(safe-area-inset-bottom, 6px);
+      }
+      .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 0.68rem;
+        font-weight: 800;
+        flex: 1;
+        transition: all 0.2s;
+        border: none;
+        background: none;
+        color: inherit;
+        opacity: 0.6;
+      }
+      .mobile-nav-item.active {
+        color: var(--current-primary);
+        opacity: 1;
+      }
+      .mobile-nav-item span:first-child {
+        font-size: 1.4rem;
+      }
+      /* Landing page responsive */
+      .landing-title {
+        font-size: 2.6rem !important;
+      }
+      .landing-subtitle {
+        font-size: 1rem !important;
+        margin-bottom: 32px !important;
+      }
+      .landing-btn {
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 1.2rem !important;
+        padding: 18px !important;
+      }
+      /* Theme toggle on mobile goes inside topbar, hide fixed one */
+      .theme-toggle {
+        position: static !important;
+        box-shadow: none !important;
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1rem !important;
+      }
+      /* Stepper label wrapping */
+      .step-label {
+        font-size: 0.62rem !important;
+        white-space: normal !important;
+        text-align: center;
+        width: 60px;
+        top: 40px !important;
+        line-height: 1.2;
+      }
+      .stepper {
+        padding: 0 4px;
+        margin: 24px 0 56px;
+      }
+      /* Toast stays inside viewport */
+      .toast-container {
+        top: auto !important;
+        bottom: 90px;
+        right: 12px !important;
+        left: 12px;
+        align-items: stretch;
+      }
+      .toast {
+        font-size: 0.9rem;
+        padding: 12px 16px;
+      }
+      /* Top banner smaller */
+      .top-banner {
+        height: 160px !important;
+        border-radius: 16px !important;
+        margin-bottom: 20px !important;
+      }
+      /* Cards grid single col on very small */
+      .grid-cards {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+      /* Auth card full width */
+      .auth-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 16px;
+      }
+      /* floating cart btn above bottom nav */
+      .floating-cart-btn {
+        bottom: 80px !important;
+        right: 16px !important;
+        width: 56px !important;
+        height: 56px !important;
+      }
+      /* orders flex wrapping */
+      .order-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      /* Admin recent orders flex */
+      .admin-order-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px;
+      }
+      h2.section-title {
+        font-size: 1.6rem !important;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .main-content {
+        padding: 12px 10px 90px;
+      }
+      .landing-title {
+        font-size: 2.1rem !important;
+      }
+      .mobile-nav-item {
+        font-size: 0.6rem;
+      }
     }
 
     .card {
@@ -243,7 +426,7 @@ const GlobalStyles = () => (
       display: flex;
       justify-content: space-between;
       position: relative;
-      margin: 30px 0;
+      margin: 30px 0 60px;
       padding: 0 10px;
     }
     .stepper::before {
@@ -472,6 +655,14 @@ const GlobalStyles = () => (
       padding: 0;
       font-size: 1.2rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (max-width: 768px) {
+      .desktop-only-theme {
+        display: none !important;
+      }
     }
 
     .banner-img {
@@ -552,44 +743,83 @@ const FloatingEmojis = () => {
   );
 };
 
-const DashboardLayout = ({ sidebarItems, children, onLogout, userBadge }) => {
+const DashboardLayout = ({ sidebarItems, children, onLogout, userBadge, onToggleTheme, theme }) => {
+  const themeBtn = (
+    <button
+      className="theme-toggle card"
+      onClick={onToggleTheme}
+      style={{ position: 'static', width: 36, height: 36, fontSize: '1rem', boxShadow: 'none' }}
+    >
+      {theme === 'light' ? '🌙' : '☀️'}
+    </button>
+  );
   return (
-    <div className="app-layout">
-      <div className="sidebar">
-        <h2 style={{ fontSize: '2rem', marginBottom: '32px', color: 'var(--current-primary)', lineHeight: '1.2' }}>
-          Food at<br/>a Click 🍽️
-        </h2>
-        
-        <div style={{ marginBottom: '32px' }}>
-          <span className="badge" style={{ fontSize: '1rem', padding: '8px 16px' }}>{userBadge}</span>
-        </div>
-
-        <div className="flex-col gap-2" style={{ flex: 1 }}>
-          {sidebarItems.map(item => (
-            <div 
-              key={item.label} 
-              className={`sidebar-item ${item.active ? 'active' : ''}`} 
-              onClick={item.onClick}
-            >
-              <span style={{ fontSize: '1.5rem' }}>{item.icon}</span> 
-              {item.label}
-            </div>
-          ))}
-        </div>
-
-        <div 
-          className="sidebar-item" 
-          style={{ color: 'var(--current-primary)', marginTop: 'auto' }}
-          onClick={onLogout}
-        >
-          <span style={{ fontSize: '1.5rem' }}>🚪</span> Logout
+    <>
+      {/* Mobile Top Bar */}
+      <div className="mobile-topbar">
+        <h2>Food at a Click 🍽️</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="badge" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{userBadge}</span>
+          {themeBtn}
         </div>
       </div>
 
-      <div className="main-content">
-        {children}
+      <div className="app-layout">
+        {/* Desktop Sidebar */}
+        <div className="sidebar">
+          <h2 style={{ fontSize: '2rem', marginBottom: '32px', color: 'var(--current-primary)', lineHeight: '1.2' }}>
+            Food at<br/>a Click 🍽️
+          </h2>
+          
+          <div style={{ marginBottom: '32px' }}>
+            <span className="badge" style={{ fontSize: '1rem', padding: '8px 16px' }}>{userBadge}</span>
+          </div>
+
+          <div className="flex-col gap-2" style={{ flex: 1 }}>
+            {sidebarItems.map(item => (
+              <div 
+                key={item.label} 
+                className={`sidebar-item ${item.active ? 'active' : ''}`} 
+                onClick={item.onClick}
+              >
+                <span style={{ fontSize: '1.5rem' }}>{item.icon}</span> 
+                {item.label}
+              </div>
+            ))}
+          </div>
+
+          <div 
+            className="sidebar-item" 
+            style={{ color: 'var(--current-primary)', marginTop: 'auto' }}
+            onClick={onLogout}
+          >
+            <span style={{ fontSize: '1.5rem' }}>🚪</span> Logout
+          </div>
+        </div>
+
+        <div className="main-content">
+          {children}
+        </div>
       </div>
-    </div>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="mobile-nav">
+        {sidebarItems.map(item => (
+          <button
+            key={item.label}
+            className={`mobile-nav-item ${item.active ? 'active' : ''}`}
+            onClick={item.onClick}
+          >
+            <span>{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+        <button className="mobile-nav-item" onClick={onLogout}>
+          <span>🚪</span>
+          <span>Logout</span>
+        </button>
+      </nav>
+    </>
   );
 };
 
@@ -900,12 +1130,17 @@ export default function FoodAtAClick() {
   return (
     <>
       <GlobalStyles />
-      <button className="theme-toggle card" onClick={toggleTheme}>
+      {/* Fixed theme toggle — hidden on mobile via CSS (mobile topbar has its own) */}
+      <button className="theme-toggle card desktop-only-theme" onClick={toggleTheme}>
         {theme === 'light' ? '🌙' : '☀️'}
       </button>
 
       {currentView === 'landing' && (
-        <LandingView onSelectRole={(role) => setCurrentView(`login-${role}`)} />
+        <LandingView
+          onSelectRole={(role) => setCurrentView(`login-${role}`)}
+          onToggleTheme={toggleTheme}
+          theme={theme}
+        />
       )}
 
       {currentView.startsWith('login-') && (
@@ -916,14 +1151,16 @@ export default function FoodAtAClick() {
           showToast={showToast}
           handleAdminLogin={handleAdminLogin}
           setSession={(sess) => { setSession(sess); setCurrentView('dashboard'); }}
+          onToggleTheme={toggleTheme}
+          theme={theme}
         />
       )}
 
       {currentView === 'dashboard' && session && (
         <>
-          {session.role === 'user' && <UserDashboard db={db} session={session} showToast={showToast} onLogout={handleLogout} />}
-          {session.role === 'stall' && <StallDashboard db={db} session={session} showToast={showToast} setSession={setSession} onLogout={handleLogout} />}
-          {session.role === 'admin' && <AdminDashboard db={db} session={session} showToast={showToast} onLogout={handleLogout} />}
+          {session.role === 'user' && <UserDashboard db={db} session={session} showToast={showToast} onLogout={handleLogout} onToggleTheme={toggleTheme} theme={theme} />}
+          {session.role === 'stall' && <StallDashboard db={db} session={session} showToast={showToast} setSession={setSession} onLogout={handleLogout} onToggleTheme={toggleTheme} theme={theme} />}
+          {session.role === 'admin' && <AdminDashboard db={db} session={session} showToast={showToast} onLogout={handleLogout} onToggleTheme={toggleTheme} theme={theme} />}
         </>
       )}
 
@@ -935,41 +1172,53 @@ export default function FoodAtAClick() {
 // ==========================================
 // LANDING VIEW
 // ==========================================
-function LandingView({ onSelectRole }) {
+function LandingView({ onSelectRole, onToggleTheme, theme }) {
   return (
-    <div className="container flex-col items-center justify-center" style={{ minHeight: '100vh', textAlign: 'center' }}>
-      <FloatingEmojis />
-      <div className="animated-list" style={{ maxWidth: '600px', width: '100%' }}>
-        <h1 style={{ fontSize: '4rem', marginBottom: '16px', color: 'var(--current-primary)' }}>
-          Food at a Click
-        </h1>
-        <h2 style={{ opacity: 0.8, marginBottom: '48px' }}>Skip the queue, not the flavor 🍜</h2>
-        
-        <div className="flex-col gap-4" style={{ alignItems: 'center' }}>
-          <button 
-            className="primary card shimmer" 
-            style={{ width: '80%', maxWidth: '350px', fontSize: '1.5rem', padding: '24px' }}
-            onClick={() => onSelectRole('user')}
-          >
-            🍴 Want to Eat
-          </button>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Mobile header with theme toggle */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px' }}>
+        <button
+          className="theme-toggle card"
+          onClick={onToggleTheme}
+          style={{ position: 'static', width: 40, height: 40, fontSize: '1rem', boxShadow: 'none' }}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+      </div>
+      <div className="container flex-col items-center justify-center" style={{ flex: 1, textAlign: 'center', paddingBottom: '32px' }}>
+        <FloatingEmojis />
+        <div className="animated-list" style={{ maxWidth: '500px', width: '100%' }}>
+          <h1 className="landing-title" style={{ fontSize: '4rem', marginBottom: '16px', color: 'var(--current-primary)' }}>
+            Food at a Click
+          </h1>
+          <h2 className="landing-subtitle" style={{ opacity: 0.8, marginBottom: '48px', fontSize: '1.2rem' }}>Skip the queue, not the flavor 🍜</h2>
           
+          <div className="flex-col gap-4" style={{ alignItems: 'center' }}>
+            <button 
+              className="primary card shimmer landing-btn" 
+              style={{ width: '80%', maxWidth: '350px', fontSize: '1.5rem', padding: '24px' }}
+              onClick={() => onSelectRole('user')}
+            >
+              🍴 Want to Eat
+            </button>
+            
+            <button 
+              className="accent card shimmer landing-btn" 
+              style={{ width: '80%', maxWidth: '350px', fontSize: '1.5rem', padding: '24px' }}
+              onClick={() => onSelectRole('stall')}
+            >
+              🏪 Want to Serve
+            </button>
+          </div>
+
           <button 
-            className="accent card shimmer" 
-            style={{ width: '80%', maxWidth: '350px', fontSize: '1.5rem', padding: '24px' }}
-            onClick={() => onSelectRole('stall')}
+            className="ghost" 
+            style={{ marginTop: '48px', fontSize: '0.9rem', padding: '8px 16px', border: 'none', opacity: 0.5 }}
+            onClick={() => onSelectRole('admin')}
           >
-            🏪 Want to Serve
+            🤫 Admin Access
           </button>
         </div>
-
-        <button 
-          className="ghost" 
-          style={{ marginTop: '64px', fontSize: '0.9rem', padding: '8px 16px', border: 'none', opacity: 0.5 }}
-          onClick={() => onSelectRole('admin')}
-        >
-          🤫 Admin Access
-        </button>
       </div>
     </div>
   );
@@ -978,7 +1227,7 @@ function LandingView({ onSelectRole }) {
 // ==========================================
 // AUTH VIEW
 // ==========================================
-function AuthView({ role, onBack, db, showToast, handleAdminLogin, setSession }) {
+function AuthView({ role, onBack, db, showToast, handleAdminLogin, setSession, onToggleTheme, theme }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1034,62 +1283,72 @@ function AuthView({ role, onBack, db, showToast, handleAdminLogin, setSession })
   };
 
   return (
-    <div className="container flex-col items-center justify-center" style={{ minHeight: '100vh' }}>
-      <FloatingEmojis />
-      <div className="card animated-list" style={{ width: '100%', maxWidth: '400px' }}>
-        <button onClick={onBack} style={{ background: 'transparent', padding: 0, marginBottom: '16px' }}>
-          ⬅️ Back
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Mobile header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}>
+        <button onClick={onBack} style={{ background: 'transparent', padding: '4px 0', fontSize: '1rem' }}>⬅️ Back</button>
+        <button
+          className="theme-toggle card"
+          onClick={onToggleTheme}
+          style={{ position: 'static', width: 40, height: 40, fontSize: '1rem', boxShadow: 'none' }}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
         </button>
-        
-        <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>
-          {role === 'admin' ? 'Secret Admin Door 🕵️‍♂️' : role === 'stall' ? 'Stall Portal 🏪' : 'Foodie Login 😋'}
-        </h2>
-
-        {isLogin && (
-          <div style={{ background: 'rgba(128,128,128,0.1)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '0.85rem' }}>
-            <strong>Demo Accounts:</strong><br/>
-            {role === 'stall' ? 'burger@stall.com / password' : 'foodie@test.com / password'}
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="flex-col">
-          <input 
-            type={role === 'admin' ? "text" : "email"} 
-            placeholder={role === 'admin' ? "Username" : "Email"} 
-            value={email} onChange={e => setEmail(e.target.value)} required
-          />
-          <input 
-            type="password" placeholder="Password" 
-            value={password} onChange={e => setPassword(e.target.value)} required
-          />
+      </div>
+      <div className="container flex-col items-center justify-center" style={{ flex: 1, paddingBottom: '32px' }}>
+        <FloatingEmojis />
+        <div className="card animated-list auth-card" style={{ width: '100%', maxWidth: '400px' }}>
           
-          {!isLogin && role === 'stall' && (
-            <input 
-              type="text" placeholder="Stall Name" 
-              value={stallName} onChange={e => setStallName(e.target.value)} required
-            />
+          <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>
+            {role === 'admin' ? 'Secret Admin Door 🕵️‍♂️' : role === 'stall' ? 'Stall Portal 🏪' : 'Foodie Login 😋'}
+          </h2>
+
+          {isLogin && (
+            <div style={{ background: 'rgba(128,128,128,0.1)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '0.85rem' }}>
+              <strong>Demo Accounts:</strong><br/>
+              {role === 'stall' ? 'burger@stall.com / password' : 'foodie@test.com / password'}
+            </div>
           )}
-
-          {!isLogin && role === 'user' && (
+          
+          <form onSubmit={handleSubmit} className="flex-col">
             <input 
-              type="text" placeholder="Your Full Name" 
-              value={userName} onChange={e => setUserName(e.target.value)} required
+              type={role === 'admin' ? "text" : "email"} 
+              placeholder={role === 'admin' ? "Username" : "Email"} 
+              value={email} onChange={e => setEmail(e.target.value)} required
             />
+            <input 
+              type="password" placeholder="Password" 
+              value={password} onChange={e => setPassword(e.target.value)} required
+            />
+            
+            {!isLogin && role === 'stall' && (
+              <input 
+                type="text" placeholder="Stall Name" 
+                value={stallName} onChange={e => setStallName(e.target.value)} required
+              />
+            )}
+
+            {!isLogin && role === 'user' && (
+              <input 
+                type="text" placeholder="Your Full Name" 
+                value={userName} onChange={e => setUserName(e.target.value)} required
+              />
+            )}
+
+            <button type="submit" className="primary" disabled={loading}>
+              {loading ? <span className="spinner">🍴</span> : (isLogin ? 'Login' : 'Sign Up')}
+            </button>
+          </form>
+
+          {role !== 'admin' && (
+            <p style={{ textAlign: 'center', marginTop: '16px', opacity: 0.8 }}>
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <span style={{ color: 'var(--current-primary)', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setIsLogin(!isLogin)}>
+                {isLogin ? 'Sign up' : 'Login'}
+              </span>
+            </p>
           )}
-
-          <button type="submit" className="primary" disabled={loading}>
-            {loading ? <span className="spinner">🍴</span> : (isLogin ? 'Login' : 'Sign Up')}
-          </button>
-        </form>
-
-        {role !== 'admin' && (
-          <p style={{ textAlign: 'center', marginTop: '16px', opacity: 0.8 }}>
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span style={{ color: 'var(--current-primary)', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setIsLogin(!isLogin)}>
-              {isLogin ? 'Sign up' : 'Login'}
-            </span>
-          </p>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -1098,7 +1357,7 @@ function AuthView({ role, onBack, db, showToast, handleAdminLogin, setSession })
 // ==========================================
 // USER DASHBOARD
 // ==========================================
-function UserDashboard({ db, session, showToast, onLogout }) {
+function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme }) {
   const [stalls, setStalls] = useState([]);
   const [selectedStall, setSelectedStall] = useState(null);
   const [menu, setMenu] = useState([]);
@@ -1245,7 +1504,7 @@ function UserDashboard({ db, session, showToast, onLogout }) {
   ];
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="😋 Foodie">
+    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="😋 Foodie" onToggleTheme={onToggleTheme} theme={theme}>
       {view === 'home' && (
         <div className="animated-list">
           <img src="/food_banner.png" alt="Delicious Food Banner" className="top-banner" />
@@ -1484,7 +1743,7 @@ function UserDashboard({ db, session, showToast, onLogout }) {
 // ==========================================
 // STALL DASHBOARD
 // ==========================================
-function StallDashboard({ db, session, showToast, setSession, onLogout }) {
+function StallDashboard({ db, session, showToast, setSession, onLogout, onToggleTheme, theme }) {
   const [view, setView] = useState('analytics'); // analytics, orders, menu, profile
   const [orders, setOrders] = useState([]);
   const [menu, setMenu] = useState([]);
@@ -1588,7 +1847,7 @@ function StallDashboard({ db, session, showToast, setSession, onLogout }) {
   const PIE_COLORS = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#9D4EDD'];
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="🏪 Stall">
+    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="🏪 Stall" onToggleTheme={onToggleTheme} theme={theme}>
       {!profile.is_approved && (
         <div style={{ backgroundColor: '#FF6B6B', color: 'white', padding: '16px', borderRadius: '8px', marginBottom: '24px', fontWeight: 'bold' }}>
           🚧 Your stall is currently under review by an Admin. It will not be visible to customers until approved.
@@ -1765,7 +2024,7 @@ function StallDashboard({ db, session, showToast, setSession, onLogout }) {
 // ==========================================
 // ADMIN DASHBOARD
 // ==========================================
-function AdminDashboard({ db, showToast, onLogout }) {
+function AdminDashboard({ db, showToast, onLogout, onToggleTheme, theme }) {
   const stalls = db.profiles.filter(p => p.role === 'stall');
   const orders = [...db.orders].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   
@@ -1788,7 +2047,7 @@ function AdminDashboard({ db, showToast, onLogout }) {
   ];
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="👑 Admin">
+    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="👑 Admin" onToggleTheme={onToggleTheme} theme={theme}>
       {view === 'overview' && (
         <div className="animated-list">
           <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>Admin Overview</h2>
