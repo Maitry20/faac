@@ -66,8 +66,8 @@ const GlobalStyles = () => (
       width: 100vw;
     }
     .sidebar {
-      width: 250px;
-      min-width: 250px;
+      width: 280px;
+      min-width: 280px;
       background: var(--current-card);
       padding: 32px 24px;
       display: flex;
@@ -75,6 +75,36 @@ const GlobalStyles = () => (
       border-right: 2px solid rgba(128,128,128,0.05);
       z-index: 100;
       box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .sidebar.collapsed {
+      width: 88px;
+      min-width: 88px;
+      padding: 32px 16px;
+    }
+    .sidebar-toggle {
+      position: absolute;
+      top: 24px;
+      right: -15px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--current-card);
+      border: 2px solid rgba(128,128,128,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 101;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .sidebar-toggle:hover {
+      background: #FF6B6B;
+      color: white;
+      border-color: #FF6B6B;
+      transform: scale(1.1);
     }
     .sidebar-item {
       padding: 14px 16px;
@@ -87,6 +117,63 @@ const GlobalStyles = () => (
       align-items: center;
       gap: 12px;
       margin-bottom: 8px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .sidebar-label {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .collapsed .sidebar-label {
+      opacity: 0;
+      transform: translateX(-20px);
+      pointer-events: none;
+    }
+    .sidebar-logo {
+      transition: all 0.4s ease;
+      overflow: hidden;
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .collapsed .sidebar-logo {
+      align-items: center;
+    }
+    .logo-text-wrapper {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 1;
+      max-height: 100px;
+      overflow: hidden;
+      color: var(--current-primary);
+      font-size: 2rem;
+      line-height: 1.2;
+      font-family: 'Fredoka One', cursive;
+      letter-spacing: 0.5px;
+    }
+    .collapsed .logo-text-wrapper {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(-10px);
+    }
+    .logo-icon-wrapper {
+      font-size: 2.2rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Fredoka One', cursive;
+    }
+    .collapsed .logo-icon-wrapper {
+      transform: scale(1.2);
+    }
+    .sidebar-badge-container {
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    .collapsed .sidebar-badge-container {
+      opacity: 0;
+      transform: translateY(-10px);
+      height: 0;
+      margin-bottom: 0 !important;
     }
     .sidebar-item:hover {
       background: rgba(128,128,128,0.1);
@@ -400,6 +487,129 @@ const GlobalStyles = () => (
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    @keyframes cardExit {
+      0% { opacity: 1; transform: scale(1); max-height: 1000px; margin-bottom: 16px; padding: 24px; }
+      100% { opacity: 0; transform: scale(0.9); max-height: 0; margin-bottom: 0; padding: 0; overflow: hidden; }
+    }
+
+    .card-exit {
+      animation: cardExit 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      pointer-events: none;
+    }
+
+    /* Stall Dashboard Hover Effects */
+    .stall-order-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: 2px solid transparent;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      box-sizing: border-box;
+      position: relative;
+    }
+    
+    .stall-order-card:hover {
+      grid-column: span 2; /* Push neighbors to the right */
+      box-shadow: 0 20px 48px rgba(0,0,0,0.15);
+      border-color: var(--current-primary);
+      z-index: 50;
+    }
+
+    /* Stable expansion for the rightmost card to prevent row-jumping glitch */
+    .stall-order-card:nth-child(3n):hover {
+      grid-column: 2 / span 2; /* Occupy Col 2 and 3, pushing the 2nd card down */
+    }
+
+    .status-badge-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(128,128,128,0.05);
+      border-radius: 12px;
+      margin-top: 16px;
+      transition: all 0.3s ease;
+    }
+
+    /* Back Button Styling */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 24px 8px 10px;
+      background: var(--card-light);
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      color: #2D2D2D;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-bottom: 24px;
+      text-decoration: none;
+    }
+
+    .back-btn .arrow-circle {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 107, 107, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s ease;
+    }
+
+    .back-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: #FF6B6B;
+      stroke-width: 2.5;
+      fill: none;
+      transition: all 0.4s ease;
+    }
+
+    .back-btn:hover {
+      background: #FF6B6B;
+      color: white;
+      transform: translateY(-5px) translateX(-2px);
+      box-shadow: 0 20px 40px rgba(255, 107, 107, 0.4);
+    }
+
+    .back-btn:hover .arrow-circle {
+      background: white;
+    }
+
+    .back-btn:hover svg {
+      stroke: #FF6B6B;
+    }
+
+    .stall-order-card:hover .status-badge-preview {
+      opacity: 0;
+      transform: scale(0.95);
+      height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .stepper-wrapper {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateY(20px);
+    }
+
+    .stall-order-card:hover .stepper-wrapper {
+      max-height: 200px;
+      opacity: 1;
+      transform: translateY(0);
+      margin-top: 16px;
+    }
     
     .animated-list > * {
       animation: fadeInSlide 0.5s ease forwards;
@@ -450,7 +660,7 @@ const GlobalStyles = () => (
       background: var(--current-primary);
       z-index: 1;
       border-radius: 2px;
-      transition: width 0.5s ease;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .step {
       z-index: 2;
@@ -693,7 +903,7 @@ const GlobalStyles = () => (
 // 2. CONSTANTS & MOCK DATA
 // ==========================================
 const EMOJIS = ['🍕', '🍔', '🍜', '🧁', '🍣', '🌭', '🍟', '🍦', '🍩', '🌮'];
-const STATUSES = ['Order Received', 'Cooking', 'Cooked', 'Ready to Eat'];
+const STATUSES = ['Order Received', 'Cooking', 'Cooked', 'Ready to Eat', 'Picked Up'];
 
 const generateUUID = () => {
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -749,6 +959,8 @@ const FloatingEmojis = () => {
 };
 
 const DashboardLayout = ({ sidebarItems, children, onLogout, userBadge, onToggleTheme, theme }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const themeBtn = (
     <button
       className="theme-toggle card"
@@ -771,34 +983,57 @@ const DashboardLayout = ({ sidebarItems, children, onLogout, userBadge, onToggle
 
       <div className="app-layout">
         {/* Desktop Sidebar */}
-        <div className="sidebar">
-          <h2 style={{ fontSize: '2rem', marginBottom: '32px', color: 'var(--current-primary)', lineHeight: '1.2' }}>
-            Food at<br/>a Click 🍽️
-          </h2>
+        <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-toggle" onClick={() => setIsCollapsed(!isCollapsed)}>
+            {isCollapsed ? '▶' : '◀'}
+          </div>
+
+          <div className="sidebar-logo">
+            <div className="logo-text-wrapper">
+              Food at<br/>a Click
+            </div>
+            <div className="logo-icon-wrapper">
+              🍽️
+            </div>
+          </div>
           
-          <div style={{ marginBottom: '32px' }}>
+          <div className="sidebar-badge-container" style={{ marginBottom: '32px' }}>
             <span className="badge" style={{ fontSize: '1rem', padding: '8px 16px' }}>{userBadge}</span>
           </div>
 
-          <div className="flex-col gap-2" style={{ flex: 1 }}>
+          <div className="flex-col gap-2" style={{ flex: 1, alignItems: isCollapsed ? 'center' : 'stretch' }}>
             {sidebarItems.map(item => (
               <div 
                 key={item.label} 
                 className={`sidebar-item ${item.active ? 'active' : ''}`} 
                 onClick={item.onClick}
+                title={isCollapsed ? item.label : ''}
+                style={{ 
+                  justifyContent: isCollapsed ? 'center' : 'flex-start', 
+                  padding: isCollapsed ? '14px 0' : '14px 16px', 
+                  width: isCollapsed ? '56px' : 'auto' 
+                }}
               >
-                <span style={{ fontSize: '1.5rem' }}>{item.icon}</span> 
-                {item.label}
+                <span style={{ fontSize: '1.5rem', transition: 'transform 0.3s' }} className={isCollapsed ? 'scale-up' : ''}>{item.icon}</span> 
+                <span className="sidebar-label" style={{ marginLeft: isCollapsed ? '0' : '12px', display: isCollapsed ? 'none' : 'inline' }}>{item.label}</span>
               </div>
             ))}
           </div>
 
           <div 
             className="sidebar-item" 
-            style={{ color: 'var(--current-primary)', marginTop: 'auto' }}
+            style={{ 
+              color: 'var(--current-primary)', 
+              marginTop: 'auto', 
+              justifyContent: isCollapsed ? 'center' : 'flex-start', 
+              padding: isCollapsed ? '14px 0' : '14px 16px', 
+              width: isCollapsed ? '56px' : 'auto' 
+            }}
             onClick={onLogout}
+            title={isCollapsed ? 'Logout' : ''}
           >
-            <span style={{ fontSize: '1.5rem' }}>🚪</span> Logout
+            <span style={{ fontSize: '1.5rem' }}>🚪</span> 
+            <span className="sidebar-label" style={{ marginLeft: isCollapsed ? '0' : '12px', display: isCollapsed ? 'none' : 'inline' }}>Logout</span>
           </div>
         </div>
 
@@ -1365,6 +1600,56 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
   const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [profile, setProfile] = useState({ name: '', email: '' });
+  const [view, setView] = useState('home'); // home (stalls), menu, orders, history
+  const [myOrders, setMyOrders] = useState([]);
+  const [myHistory, setMyHistory] = useState([]);
+  const [exitingOrders, setExitingOrders] = useState(new Set());
+  const [animatingOrders, setAnimatingOrders] = useState(new Set());
+  const [pickupTime, setPickupTime] = useState('');
+  const [showPayment, setShowPayment] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [reviewDraft, setReviewDraft] = useState({ orderId: null, stallId: null, rating: 5, comment: '' });
+
+  const stats = useMemo(() => {
+    const allUserOrders = db.orders.filter(o => o.user_id === session.id);
+    const totalSpent = allUserOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    
+    // Favorite Stall
+    const stallCounts = {};
+    allUserOrders.forEach(o => {
+      stallCounts[o.stall_id] = (stallCounts[o.stall_id] || 0) + 1;
+    });
+    const favStallId = Object.entries(stallCounts).sort((a,b) => b[1] - a[1])[0]?.[0];
+    const favStall = db.profiles.find(p => p.id === favStallId)?.stall_name || 'None yet';
+
+    // Most Ordered Item
+    const itemCounts = {};
+    allUserOrders.forEach(o => {
+      o.items.forEach(it => {
+        itemCounts[it.name] = (itemCounts[it.name] || 0) + it.qty;
+      });
+    });
+    const topItem = Object.entries(itemCounts).sort((a,b) => b[1] - a[1])[0]?.[0] || 'None yet';
+
+    // Monthly Data
+    const monthlyMap = {};
+    allUserOrders.forEach(o => {
+      const month = new Date(o.created_at).toLocaleString('default', { month: 'short' });
+      monthlyMap[month] = (monthlyMap[month] || 0) + 1;
+    });
+    const monthlyData = Object.entries(monthlyMap).map(([name, count]) => ({ name, count }));
+
+    // Rank Logic
+    let rank = 'Snack Scout 🥨';
+    let rankColor = '#94A3B8';
+    if (allUserOrders.length > 20) { rank = 'Foodie Legend 👑'; rankColor = '#F59E0B'; }
+    else if (allUserOrders.length > 10) { rank = 'Flavor Master 👨‍🍳'; rankColor = '#10B981'; }
+    else if (allUserOrders.length > 5) { rank = 'Hunger Hero 🦸'; rankColor = '#3B82F6'; }
+
+    return { totalOrders: allUserOrders.length, totalSpent, favStall, topItem, monthlyData, rank, rankColor };
+  }, [db.orders, db.profiles, session.id]);
 
   const getDynamicWaitTime = (stallId, minPickupTime) => {
     const activeOrders = db.orders.filter(o => o.stall_id === stallId && o.status !== 'Ready to Eat');
@@ -1377,22 +1662,20 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
       const estDate = new Date(Date.now() + waitTime * 60000);
       setPickupTime(estDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
     }
-  }, [isCartOpen, selectedStall]);
-  const [myOrders, setMyOrders] = useState([]);
-  const [view, setView] = useState('home'); // home (stalls), menu, orders
-  
-  const [pickupTime, setPickupTime] = useState('');
-  const [showPayment, setShowPayment] = useState(false);
-
-  // New states for UX features
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [reviewDraft, setReviewDraft] = useState({ orderId: null, stallId: null, rating: 5, comment: '' });
+  }, [isCartOpen, selectedStall, db.orders]);
 
   const categories = ['All', 'Fast Food', 'Asian', 'Healthy', 'Burgers', 'Beverages'];
   const userProfile = db.profiles.find(p => p.id === session.id) || session.profileData;
 
   useEffect(() => {
+    const currentProfile = db.profiles.find(p => p.id === session.id);
+    if (currentProfile) {
+      setProfile({
+        name: currentProfile.name || '',
+        email: currentProfile.email || ''
+      });
+    }
+
     const allStalls = db.profiles.filter(p => p.role === 'stall' && p.is_approved);
     
     const filteredStalls = allStalls.filter(st => {
@@ -1403,10 +1686,15 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
     setStalls(filteredStalls);
 
     const stallMap = allStalls.reduce((acc, st) => ({...acc, [st.id]: st.stall_name}), {});
-    const userOrders = db.orders.filter(o => o.user_id === session.id).map(o => ({
+    const userOrders = db.orders.filter(o => o.user_id === session.id && (o.status !== 'Picked Up' || exitingOrders.has(o.id))).map(o => ({
       ...o, stall_name: stallMap[o.stall_id] || 'Unknown Stall'
     })).sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
     setMyOrders(userOrders);
+
+    const historyOrders = db.orders.filter(o => o.user_id === session.id && o.status === 'Picked Up').map(o => ({
+      ...o, stall_name: stallMap[o.stall_id] || 'Unknown Stall'
+    })).sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    setMyHistory(historyOrders);
 
     if (selectedStall) {
       const isValid = allStalls.some(s => s.id === selectedStall.id);
@@ -1417,7 +1705,7 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
         setMenu(db.menuItems.filter(m => m.stall_id === selectedStall.id));
       }
     }
-  }, [db, session.id, selectedStall, searchQuery, selectedCategory]);
+  }, [db, session.id, selectedStall, searchQuery, selectedCategory, exitingOrders]);
 
   const openStallMenu = (stall) => {
     setSelectedStall(stall);
@@ -1446,6 +1734,12 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
     showToast("Review submitted! ⭐", "success");
     setReviewDraft({ orderId: null, stallId: null, rating: 5, comment: '' });
   };
+  const handleUpdateProfile = (e) => {
+    e.preventDefault();
+    db.updateProfile(session.id, profile);
+    showToast("Profile updated! ✨", "success");
+  };
+
   const addToCart = (item) => {
     if (cart.length > 0 && cart[0].stall_id !== selectedStall.id) {
       showToast("You can only order from one stall at a time! 🛒", "error");
@@ -1502,7 +1796,10 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
 
   const sidebarItems = [
     { label: 'Home', icon: '🏠', active: view === 'home' || view === 'menu', onClick: () => { setView('home'); setSelectedStall(null); } },
-    { label: 'My Orders', icon: '🧾', active: view === 'orders', onClick: () => setView('orders') }
+    { label: 'My Orders', icon: '🧾', active: view === 'orders', onClick: () => setView('orders') },
+    { label: 'History', icon: '🕰️', active: view === 'history', onClick: () => setView('history') },
+    { label: 'Stats', icon: '📊', active: view === 'stats', onClick: () => setView('stats') },
+    { label: 'Profile', icon: '👤', active: view === 'profile', onClick: () => setView('profile') }
   ];
 
   return (
@@ -1571,7 +1868,14 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
 
       {view === 'menu' && selectedStall && (
         <div className="animated-list">
-          <button className="ghost" onClick={() => setView('home')} style={{ marginBottom: '16px' }}>⬅️ Back to Stalls</button>
+          <button className="back-btn" onClick={() => { setView('home'); setSelectedStall(null); }}>
+            <div className="arrow-circle">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 12H5M5 12L12 19M5 12L12 5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            Back to Stalls
+          </button>
           
           {selectedStall.promotion && (
             <div className="promotion-banner">
@@ -1620,7 +1924,7 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
           ) : (
             <div className="flex-col gap-4" style={{ maxWidth: '800px' }}>
               {myOrders.map(order => (
-                <div key={order.id} className="card">
+                <div key={order.id} className={`card ${animatingOrders.has(order.id) ? 'card-exit' : ''}`}>
                   <div className="flex justify-between items-center order-header" style={{ marginBottom: '16px' }}>
                     <h3 style={{ margin: 0 }}>{order.stall_name}</h3>
                     <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>₹{Number(order.total).toFixed(2)}</span>
@@ -1639,6 +1943,34 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
                     <button className="ghost" style={{ padding: '6px 12px', fontSize: '0.9rem' }} onClick={() => handleReorder(order)}>
                       Reorder 🔁
                     </button>
+                    {order.status === 'Ready to Eat' && (
+                      <button className="primary" style={{ padding: '6px 12px', fontSize: '0.9rem' }} onClick={() => { 
+                        setExitingOrders(prev => new Set(prev).add(order.id));
+                        db.updateOrderStatus(order.id, 'Picked Up'); 
+                        showToast("Order marked as Picked Up! 😋", "success"); 
+                        
+                        // Wait for stepper to finish traveling (0.8s)
+                        setTimeout(() => {
+                          setAnimatingOrders(prev => new Set(prev).add(order.id));
+                        }, 800);
+
+                        // Wait for card exit animation to finish (0.6s + buffer)
+                        setTimeout(() => {
+                          setExitingOrders(prev => {
+                            const next = new Set(prev);
+                            next.delete(order.id);
+                            return next;
+                          });
+                          setAnimatingOrders(prev => {
+                            const next = new Set(prev);
+                            next.delete(order.id);
+                            return next;
+                          });
+                        }, 1500);
+                      }}>
+                        Picked ✅
+                      </button>
+                    )}
                     {order.status === 'Ready to Eat' && !db.reviews?.some(r => r.order_id === order.id) && (
                       <button className="accent" style={{ padding: '6px 12px', fontSize: '0.9rem' }} onClick={() => setReviewDraft({ orderId: order.id, stallId: order.stall_id, rating: 5, comment: '' })}>
                         Leave Review ⭐
@@ -1738,6 +2070,142 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
           </div>
         </div>
       )}
+      {view === 'history' && (
+        <div className="animated-list">
+          <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>Order History</h2>
+          {myHistory.length === 0 ? (
+            <div className="empty-state card"><h2>No past records 🕰️</h2><p>Your finished orders will appear here.</p></div>
+          ) : (
+            <div className="flex-col gap-4" style={{ maxWidth: '800px' }}>
+              {myHistory.map(order => (
+                <div key={order.id} className="card" style={{ opacity: 0.9 }}>
+                  <div className="flex justify-between items-center order-header" style={{ marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0 }}>{order.stall_name}</h3>
+                    <span style={{ fontWeight: 'bold' }}>₹{Number(order.total).toFixed(2)}</span>
+                  </div>
+                  <p style={{ opacity: 0.7, margin: '0 0 12px 0', fontSize: '0.85rem' }}>
+                    Completed on: {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px 0', opacity: 0.8, fontSize: '0.9rem' }}>
+                    {order.items.map((it, idx) => (
+                      <li key={idx}>{it.qty}x {it.emoji} {it.name}</li>
+                    ))}
+                  </ul>
+                  <div className="flex gap-2">
+                    <button className="ghost" style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={() => handleReorder(order)}>
+                      Reorder 🔁
+                    </button>
+                    {!db.reviews?.some(r => r.order_id === order.id) && (
+                      <button className="accent" style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={() => setReviewDraft({ orderId: order.id, stallId: order.stall_id, rating: 5, comment: '' })}>
+                        Leave Review ⭐
+                      </button>
+                    )}
+                  </div>
+                  {reviewDraft.orderId === order.id && (
+                    <div className="card flex-col gap-2" style={{ background: 'var(--current-surface-hover)', marginTop: '12px' }}>
+                      <label>Rating: {reviewDraft.rating} ⭐</label>
+                      <input type="range" min="1" max="5" value={reviewDraft.rating} onChange={e => setReviewDraft({...reviewDraft, rating: parseInt(e.target.value)})} />
+                      <textarea placeholder="How was it?" value={reviewDraft.comment} onChange={e => setReviewDraft({...reviewDraft, comment: e.target.value})} rows="2" style={{ fontSize: '0.9rem', padding: '8px' }} />
+                      <div className="flex gap-2">
+                        <button className="primary" onClick={submitReview}>Submit</button>
+                        <button className="ghost" onClick={() => setReviewDraft({ orderId: null, stallId: null, rating: 5, comment: '' })}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {view === 'stats' && (
+        <div className="animated-list">
+          <div className="flex justify-between items-end" style={{ marginBottom: '32px' }}>
+            <div>
+              <h2 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Your Foodie Journey 📊</h2>
+              <p style={{ opacity: 0.7, fontSize: '1.1rem' }}>Tracking your delicious adventures on campus.</p>
+            </div>
+            <div className="card" style={{ padding: '12px 24px', background: stats.rankColor, color: 'white', border: 'none', borderRadius: '16px', fontWeight: '900', boxShadow: `0 10px 20px ${stats.rankColor}44` }}>
+              {stats.rank}
+            </div>
+          </div>
+
+          <div className="grid-cards" style={{ marginBottom: '32px' }}>
+            <div className="card shimmer text-center" style={{ padding: '32px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🛍️</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{stats.totalOrders}</div>
+              <p style={{ opacity: 0.7, margin: 0, fontWeight: '700' }}>Total Orders</p>
+            </div>
+            <div className="card shimmer text-center" style={{ padding: '32px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💰</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>₹{stats.totalSpent.toFixed(2)}</div>
+              <p style={{ opacity: 0.7, margin: 0, fontWeight: '700' }}>Total Spent</p>
+            </div>
+            <div className="card shimmer text-center" style={{ padding: '32px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏪</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '8px', color: 'var(--current-primary)' }}>{stats.favStall}</div>
+              <p style={{ opacity: 0.7, margin: 0, fontWeight: '700' }}>Favorite Stall</p>
+            </div>
+            <div className="card shimmer text-center" style={{ padding: '32px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🍱</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '8px', color: 'var(--current-primary)' }}>{stats.topItem}</div>
+              <p style={{ opacity: 0.7, margin: 0, fontWeight: '700' }}>Top Ordered Item</p>
+            </div>
+          </div>
+
+          <div className="grid-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            <div className="card" style={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ marginBottom: '24px', fontSize: '1.5rem' }}>Order Frequency 📈</h3>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.monthlyData}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{fill: 'rgba(0,0,0,0.05)'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
+                    <Bar dataKey="count" fill="var(--current-primary)" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="card" style={{ height: '400px', background: 'var(--current-primary)', color: 'white', border: 'none', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: -20, right: -20, fontSize: '10rem', opacity: 0.1 }}>🥯</div>
+              <h3 style={{ fontSize: '2rem', marginBottom: '16px' }}>Pro Tip! 💡</h3>
+              <p style={{ fontSize: '1.2rem', lineHeight: '1.6', opacity: 0.9 }}>
+                Ordering during off-peak hours (like 3:00 PM) can save you up to <strong>15 minutes</strong> of wait time! 
+                <br/><br/>
+                Keep exploring new stalls to unlock the <strong>Global Foodie</strong> achievement!
+              </p>
+              <button className="white" style={{ position: 'absolute', bottom: '32px', left: '32px', color: 'var(--current-primary)', fontWeight: '900' }}>
+                Share My Stats 📸
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {view === 'profile' && (
+        <div className="card animated-list" style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>My Profile</h2>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--current-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', margin: '0 auto 16px' }}>
+              {profile.name.charAt(0) || '👤'}
+            </div>
+            <h3>{profile.name}</h3>
+            <p style={{ opacity: 0.7 }}>{profile.email}</p>
+          </div>
+          
+          <form onSubmit={handleUpdateProfile} className="flex-col">
+            <label>Full Name</label>
+            <input value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} required />
+            
+            <label>Email Address</label>
+            <input type="email" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} required />
+            
+            <button type="submit" className="primary">Save Changes 💾</button>
+          </form>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
@@ -1746,8 +2214,9 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
 // STALL DASHBOARD
 // ==========================================
 function StallDashboard({ db, session, showToast, setSession, onLogout, onToggleTheme, theme }) {
-  const [view, setView] = useState('analytics'); // analytics, orders, menu, profile
+  const [view, setView] = useState('analytics'); // analytics, orders, menu, profile, history
   const [orders, setOrders] = useState([]);
+  const [history, setHistory] = useState([]);
   const [menu, setMenu] = useState([]);
   
   const [profile, setProfile] = useState({ stall_name: '', banner_url: '', min_pickup_time: 10, promotion: '', is_approved: false });
@@ -1790,7 +2259,8 @@ function StallDashboard({ db, session, showToast, setSession, onLogout, onToggle
       }
     }
 
-    setOrders(db.orders.filter(o => o.stall_id === session.id).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)));
+    setOrders(db.orders.filter(o => o.stall_id === session.id && o.status !== 'Picked Up').sort((a,b) => new Date(a.created_at) - new Date(b.created_at)));
+    setHistory(db.orders.filter(o => o.stall_id === session.id && o.status === 'Picked Up').sort((a,b) => new Date(b.created_at) - new Date(a.created_at)));
     setMenu(db.menuItems.filter(m => m.stall_id === session.id));
   }, [db, session.id]); 
 
@@ -1842,6 +2312,7 @@ function StallDashboard({ db, session, showToast, setSession, onLogout, onToggle
   const sidebarItems = [
     { label: 'Analytics', icon: '📈', active: view === 'analytics', onClick: () => setView('analytics') },
     { label: 'Orders', icon: '🧾', active: view === 'orders', onClick: () => setView('orders') },
+    { label: 'History', icon: '🕰️', active: view === 'history', onClick: () => setView('history') },
     { label: 'Menu Manager', icon: '🍳', active: view === 'menu', onClick: () => setView('menu') },
     { label: 'Profile', icon: '🏪', active: view === 'profile', onClick: () => setView('profile') }
   ];
@@ -1892,43 +2363,66 @@ function StallDashboard({ db, session, showToast, setSession, onLogout, onToggle
       )}
 
       {view === 'orders' && (
-        <div className="animated-list">
-          <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>Incoming Orders</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Incoming Orders</h2>
           {orders.length === 0 ? (
              <div className="empty-state card"><h2>No orders right now 😴</h2><p>Time to prep!</p></div>
           ) : (
-            <div className="grid-cards">
-              {orders.map(order => {
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoFlow: 'dense', gap: '24px', width: '100%', maxWidth: '1200px' }}>
+              {orders.map((order, index) => {
                 const customer = db.profiles.find(p => p.id === order.user_id) || { email: 'Guest' };
                 const customerName = customer.name || customer.email;
                 
                 return (
-                  <div key={order.id} className="card flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start order-header" style={{ marginBottom: '16px' }}>
+                  <div key={order.id} className="card stall-order-card flex-col">
+                    <div className="flex justify-between items-start order-header" style={{ marginBottom: '12px' }}>
+                      <div className="flex items-center gap-3">
+                        <div style={{ background: 'var(--current-primary)', color: 'white', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
+                          #{index + 1}
+                        </div>
                         <div>
                           <h3 style={{ margin: '0 0 4px 0', fontSize: '1.2rem' }}>Order #{order.id.split('-')[0].toUpperCase()}</h3>
                           <span style={{ opacity: 0.8, fontSize: '0.9rem' }}>👤 {customerName}</span>
                         </div>
-                        <div className="flex-col items-end">
-                          <span className="badge" style={{ marginBottom: '4px' }}>Total: ₹{Number(order.total).toFixed(2)}</span>
-                          <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
                       </div>
-                      <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0' }}>
+                      <div className="flex-col items-end">
+                        <span className="badge" style={{ marginBottom: '4px' }}>₹{Number(order.total).toFixed(2)}</span>
+                        <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </div>
+
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '0' }}>
                       {order.items.map((it, idx) => (
-                        <li key={idx} style={{ marginBottom: '8px', fontWeight: '600' }}>{it.qty}x {it.emoji} {it.name}</li>
+                        <li key={idx} style={{ marginBottom: '4px', fontWeight: '600', fontSize: '0.95rem' }}>{it.qty}x {it.emoji} {it.name}</li>
                       ))}
                     </ul>
+
+                    {/* Default Status View */}
+                    <div className="status-badge-preview">
+                      <span style={{ fontSize: '1.2rem' }}>
+                        {STATUSES.indexOf(order.status) === 0 && '📥'}
+                        {STATUSES.indexOf(order.status) === 1 && '👨‍🍳'}
+                        {STATUSES.indexOf(order.status) === 2 && '✅'}
+                        {STATUSES.indexOf(order.status) === 3 && '🎉'}
+                        {STATUSES.indexOf(order.status) === 4 && '🏁'}
+                      </span>
+                      <div>
+                        <div style={{ fontSize: '0.7rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '1px' }}>Current Status</div>
+                        <div style={{ fontWeight: '800', color: 'var(--current-primary)' }}>{order.status}</div>
+                      </div>
+                    </div>
+
+                    {/* Hover Expanded Stepper */}
+                    <div className="stepper-wrapper">
+                      <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px', opacity: 0.7 }}>Update Progress:</div>
+                      <StatusStepper 
+                        currentStatus={order.status} 
+                        interactive 
+                        onStatusClick={(status) => updateOrderStatus(order.id, status)} 
+                      />
+                    </div>
                   </div>
-                  
-                  <StatusStepper 
-                    currentStatus={order.status} 
-                    interactive 
-                    onStatusClick={(status) => updateOrderStatus(order.id, status)} 
-                  />
-                </div>
-              )})}
+                )})}
             </div>
           )}
         </div>
@@ -2017,6 +2511,38 @@ function StallDashboard({ db, session, showToast, setSession, onLogout, onToggle
             
             <button type="submit" className="primary">Save Changes 💾</button>
           </form>
+        </div>
+      )}
+      {view === 'history' && (
+        <div className="animated-list">
+          <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>Fulfilled Orders History</h2>
+          {history.length === 0 ? (
+            <div className="empty-state card"><h2>No history yet 🕰️</h2><p>Completed orders will appear here.</p></div>
+          ) : (
+            <div className="flex-col gap-4">
+              {history.map(order => {
+                const customer = db.profiles.find(p => p.id === order.user_id) || { email: 'Guest' };
+                const customerName = customer.name || customer.email;
+                return (
+                  <div key={order.id} className="card flex justify-between items-center" style={{ opacity: 0.9 }}>
+                    <div>
+                      <h3 style={{ margin: '0 0 4px 0' }}>Order #{order.id.split('-')[0].toUpperCase()}</h3>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>👤 {customerName} • {new Date(order.created_at).toLocaleDateString()}</div>
+                      <ul style={{ listStyle: 'none', padding: 0, marginTop: '8px', fontSize: '0.85rem' }}>
+                        {order.items.map((it, idx) => (
+                          <li key={idx}>{it.qty}x {it.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>₹{Number(order.total).toFixed(2)}</div>
+                      <span className="badge" style={{ marginTop: '8px', background: '#6BCB77' }}>Picked Up ✅</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </DashboardLayout>
