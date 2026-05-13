@@ -375,6 +375,92 @@ const GlobalStyles = () => (
         align-items: stretch !important;
         gap: 16px !important;
       }
+
+      /* Horizontal Stall Cards (Screenshot Style) */
+      .grid-cards {
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
+      }
+      .stall-card {
+        padding: 16px 0 !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        border-bottom: 1px solid rgba(128,128,128,0.1) !important;
+        margin: 0 !important;
+        transition: background 0.2s;
+      }
+      .stall-card:active {
+        background: rgba(128,128,128,0.05) !important;
+      }
+      .stall-card-inner {
+        display: flex !important;
+        gap: 16px !important;
+        align-items: flex-start !important;
+      }
+      .stall-image-wrapper {
+        flex-shrink: 0;
+      }
+      .stall-card .banner-img {
+        width: 100px !important;
+        height: 100px !important;
+        border-radius: 16px !important;
+        margin-bottom: 0 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      }
+      .stall-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .stall-info h3 {
+        font-size: 1.2rem !important;
+        color: var(--text-light);
+        margin: 0 !important;
+        -webkit-line-clamp: 2 !important;
+      }
+      body.dark .stall-info h3 {
+        color: var(--text-dark);
+      }
+      .stall-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        opacity: 0.8;
+      }
+      .rating-tag {
+        color: #4834d4; /* Deep purple like the screenshot */
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      .separator {
+        opacity: 0.4;
+      }
+      .stall-status-text {
+        font-size: 0.85rem;
+        opacity: 0.6;
+        margin-top: 2px;
+      }
+      .stall-categories-list {
+        font-size: 0.75rem;
+        opacity: 0.5;
+        margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .stall-card .fav-btn {
+        position: static !important;
+        padding: 4px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        font-size: 1.2rem !important;
+      }
     }
 
     @media (max-width: 400px) {
@@ -1840,25 +1926,40 @@ function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme 
               </div>
             ) : (
               stalls.map(stall => (
-                <div key={stall.id} className="card shimmer" style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openStallMenu(stall)}>
-                  <button 
-                    className="ghost" 
-                    style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.9)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}
-                  >
-                    {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
-                  </button>
-                  {stall.banner_url ? (
-                    <img src={stall.banner_url} alt="Banner" className="banner-img" />
-                  ) : (
-                    <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2, fontSize: '3rem' }}>🏪</div>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <h3 style={{ margin: '0 0 4px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
-                    {stall.rating && <span style={{ fontWeight: 'bold' }}>⭐ {stall.rating.toFixed(1)} ({stall.reviewCount})</span>}
+                <div key={stall.id} className="card shimmer stall-card" onClick={() => openStallMenu(stall)}>
+                  <div className="stall-card-inner">
+                    <div className="stall-image-wrapper">
+                      {stall.banner_url ? (
+                        <img src={stall.banner_url} alt="Banner" className="banner-img" />
+                      ) : (
+                        <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2 }}>🏪</div>
+                      )}
+                    </div>
+                    
+                    <div className="stall-info">
+                      <div className="flex justify-between items-start">
+                        <h3 style={{ margin: 0 }}>{stall.stall_name || 'Unnamed Stall'}</h3>
+                        <button 
+                          className="ghost fav-btn" 
+                          onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}
+                        >
+                          {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
+                        </button>
+                      </div>
+
+                      <div className="stall-meta-row">
+                        {stall.rating && <span className="rating-tag">⭐ {stall.rating.toFixed(1)}</span>}
+                        <span className="separator">•</span>
+                        <span className="pickup-label">Pickup</span>
+                      </div>
+
+                      <div className="stall-status-text">
+                        {getDynamicWaitTime(stall.id, stall.min_pickup_time) <= 15 ? 'Ready to cook 👨‍🍳' : 'Busy right now ⏳'}
+                      </div>
+                      
+                      {stall.categories && <div className="stall-categories-list">{stall.categories.join(' • ')}</div>}
+                    </div>
                   </div>
-                  <span className="badge">⏱️ Est. Wait: {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
-                  {stall.categories && <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '8px' }}>{stall.categories.join(' • ')}</div>}
                 </div>
               ))
             )}
