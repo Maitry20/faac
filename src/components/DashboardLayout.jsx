@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 
 export default function DashboardLayout({ sidebarItems, children, onLogout, userBadge, onToggleTheme, theme }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const themeBtn = (
     <button
@@ -87,24 +88,42 @@ export default function DashboardLayout({ sidebarItems, children, onLogout, user
         </div>
       </div>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="mobile-nav" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 12px))', paddingTop: '8px' }}>
-        {sidebarItems.map(item => (
-          <button
-            key={item.label}
-            className={`mobile-nav-item ${item.active ? 'active' : ''}`}
-            onClick={item.onClick}
-            style={{ padding: '8px 4px', minHeight: '48px' }}
-          >
-            <span style={{ fontSize: '1.4rem', marginBottom: '2px' }}>{item.icon}</span>
-            <span style={{ fontSize: '0.75rem' }}>{item.label}</span>
-          </button>
-        ))}
-        <button className="mobile-nav-item" onClick={onLogout} style={{ padding: '8px 4px', minHeight: '48px' }}>
-          <span style={{ fontSize: '1.4rem', marginBottom: '2px' }}>🚪</span>
-          <span style={{ fontSize: '0.75rem' }}>Logout</span>
+      {/* Mobile Floating Menu Button & Popup */}
+      <div className="md:hidden">
+        <button 
+          className="mobile-floating-menu-btn"
+          onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+          title="Toggle Navigation Menu"
+        >
+          <span style={{ fontSize: '1.6rem' }}>{isMobileNavOpen ? '✕' : '🧭'}</span>
         </button>
-      </nav>
+
+        <div className={`mobile-floating-menu ${isMobileNavOpen ? 'open' : ''}`}>
+          {sidebarItems.map(item => (
+            <button
+              key={item.label}
+              className={`mobile-floating-menu-item ${item.active ? 'active' : ''}`}
+              onClick={() => {
+                setIsMobileNavOpen(false);
+                item.onClick();
+              }}
+            >
+              <span style={{ fontSize: '1.4rem' }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+          <button 
+            className="mobile-floating-menu-item" 
+            onClick={() => {
+              setIsMobileNavOpen(false);
+              onLogout();
+            }}
+          >
+            <span style={{ fontSize: '1.4rem' }}>🚪</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
     </>
   );
 }
