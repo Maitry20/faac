@@ -13,6 +13,41 @@ const generateUUID = () => {
   });
 };
 
+const detectEmoji = (text) => {
+  const str = text.toLowerCase();
+  if (/burger|cheeseburger|patty|whopper|slider/i.test(str)) return '🍔';
+  if (/fries|chips|potato/i.test(str)) return '🍟';
+  if (/pizza|slice/i.test(str)) return '🍕';
+  if (/sushi|roll|sashimi|nigiri/i.test(str)) return '🍣';
+  if (/ramen|noodle|pho|soup|udon|soba/i.test(str)) return '🍜';
+  if (/taco|burrito|quesadilla/i.test(str)) return '🌮';
+  if (/salad|greens|bowl|healthy/i.test(str)) return '🥗';
+  if (/shake|smoothie|drink|beverage|cola|soda/i.test(str)) return '🥤';
+  if (/coffee|latte|cappuccino|espresso|tea/i.test(str)) return '☕';
+  if (/cake|pastry|dessert|brownie/i.test(str)) return '🍰';
+  if (/ice cream|gelato|sundae/i.test(str)) return '🍦';
+  if (/chicken|wings|nuggets|tender/i.test(str)) return '🍗';
+  if (/curry|tikka|masala|paneer/i.test(str)) return '🍛';
+  if (/sandwich|sub|wrap/i.test(str)) return '🥪';
+  if (/pie|tart/i.test(str)) return '🥧';
+  if (/boba|bubble/i.test(str)) return '🧋';
+  if (/pancake|waffle/i.test(str)) return '🥞';
+  if (/donut|doughnut/i.test(str)) return '🍩';
+  if (/hotdog|sausage/i.test(str)) return '🌭';
+  if (/popcorn/i.test(str)) return '🍿';
+  if (/bacon/i.test(str)) return '🥓';
+  if (/egg|omelette/i.test(str)) return '🍳';
+  if (/cheese/i.test(str)) return '🧀';
+  if (/rice|biryani|pulao/i.test(str)) return '🍚';
+  if (/bread|toast|bun/i.test(str)) return '🍞';
+  if (/fruit|apple|banana|berry/i.test(str)) return '🍎';
+  if (/fish|salmon|prawn|shrimp/i.test(str)) return '🍤';
+  if (/chocolate|choco/i.test(str)) return '🍫';
+  if (/asian/i.test(str)) return '🍱';
+  if (/dessert/i.test(str)) return '🍨';
+  return '🍲'; // default fallback
+};
+
 export default function StallDashboard({ db, session, showToast, onLogout, onToggleTheme, theme }) {
   const [view, setView] = useState('orders'); // orders, history, menu, analytics, settings
   const [orders, setOrders] = useState([]);
@@ -364,7 +399,19 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
               <div className="flex gap-4 mobile-column">
                 <div className="flex-col" style={{ flex: 1 }}>
                   <label>Dish Name</label>
-                  <input value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} required />
+                  <input 
+                    value={newItem.name} 
+                    onChange={e => {
+                      const name = e.target.value;
+                      const detectedEmoji = detectEmoji(name);
+                      setNewItem(prev => ({
+                        ...prev, 
+                        name, 
+                        emoji: detectedEmoji
+                      }));
+                    }} 
+                    required 
+                  />
                 </div>
                 <div className="flex-col" style={{ flex: 1 }}>
                   <label>Price (₹)</label>
@@ -379,7 +426,10 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
 
               {photoType === 'emoji' ? (
                 <div className="flex-col">
-                  <label>Emoji Icon</label>
+                  <div className="flex justify-between items-center" style={{ marginBottom: '4px' }}>
+                    <label style={{ margin: 0 }}>Emoji Icon</label>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.6, fontStyle: 'italic' }}>✨ Auto-suggested from dish name</span>
+                  </div>
                   <input value={newItem.emoji} onChange={e => setNewItem({...newItem, emoji: e.target.value})} required />
                 </div>
               ) : (
