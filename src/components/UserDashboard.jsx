@@ -94,7 +94,16 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   }, [isCartOpen, selectedStall, db.orders]);
 
   const categories = ['All', 'Fast Food', 'Asian', 'Healthy', 'Burgers', 'Beverages'];
-  const foodCourtsList = ['All', 'North Food Court', 'South Plaza', 'Central Cafeteria', 'Student Union'];
+  const foodCourtsList = useMemo(() => {
+    const courts = new Set();
+    db.profiles.forEach(p => {
+      if (p.role === 'stall' && p.is_approved && p.food_court) {
+        courts.add(p.food_court.trim());
+      }
+    });
+    return ['All', ...Array.from(courts)];
+  }, [db.profiles]);
+
   const userProfile = db.profiles.find(p => p.id === session.id) || session.profileData;
 
   useEffect(() => {
@@ -111,7 +120,7 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     const filteredStalls = allStalls.filter(st => {
       const matchesSearch = (st.stall_name || '').toLowerCase().includes((searchQuery || '').toLowerCase());
       const matchesCategory = selectedCategory === 'All' || (st.categories && st.categories.includes(selectedCategory));
-      const matchesFoodCourt = selectedFoodCourt === 'All' || st.food_court === selectedFoodCourt;
+      const matchesFoodCourt = selectedFoodCourt === 'All' || (st.food_court && st.food_court.trim().toLowerCase() === selectedFoodCourt.trim().toLowerCase());
       return matchesSearch && matchesCategory && matchesFoodCourt;
     });
     setStalls(filteredStalls);

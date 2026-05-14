@@ -171,7 +171,6 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   }, [db.orders, session.id]);
 
   const categoriesList = ['Fast Food', 'Asian', 'Healthy', 'Burgers', 'Beverages', 'Desserts'];
-  const foodCourtsList = ['North Food Court', 'South Plaza', 'Central Cafeteria', 'Student Union'];
 
   const filteredOrders = orders.filter(o => {
     const query = searchQuery.toLowerCase();
@@ -595,10 +594,15 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
             <label>Minimum Preparation Time (minutes)</label>
             <input type="number" value={stallProfile.min_pickup_time} onChange={e => setStallProfile({...stallProfile, min_pickup_time: parseInt(e.target.value)})} required />
 
-            <label>Food Court Location 📍</label>
-            <select value={stallProfile.food_court} onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} style={{ marginBottom: '24px' }}>
-              {foodCourtsList.map(fc => <option key={fc} value={fc}>{fc}</option>)}
-            </select>
+            <label>Food Court Name 📍</label>
+            <input 
+              type="text" 
+              placeholder="E.g., North Campus Food Court" 
+              value={stallProfile.food_court} 
+              onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} 
+              style={{ marginBottom: '24px' }} 
+              required 
+            />
 
             <label>Stall Categories</label>
             <div className="flex gap-2" style={{ flexWrap: 'wrap', marginBottom: '24px' }}>
