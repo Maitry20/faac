@@ -1,4 +1,5 @@
 import './globals.css';
+import { AppProvider } from '../context/AppContext';
 
 export const metadata = {
   title: 'Food At A Click',
@@ -13,7 +14,9 @@ export default function RootLayout({ children }) {
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       </head>
       <body suppressHydrationWarning>
-        {children}
+        <AppProvider>
+          {children}
+        </AppProvider>
       </body>
     </html>
   );
