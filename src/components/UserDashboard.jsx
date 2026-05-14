@@ -449,6 +449,7 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
 
       <div className={`modal-overlay ${isCartOpen ? '' : 'hidden'}`} style={{ display: isCartOpen ? 'flex' : 'none', opacity: isCartOpen ? 1 : 0, transition: 'opacity 0.3s' }} onClick={(e) => { if (e.target.classList.contains('modal-overlay')) setIsCartOpen(false); }}>
         <div className={`cart-drawer ${isCartOpen ? 'open' : ''}`} onClick={e => e.stopPropagation()}>
+          <div style={{ width: '40px', height: '5px', background: 'rgba(128,128,128,0.25)', borderRadius: '10px', margin: '0 auto 16px', display: 'block' }} className="mobile-only-pill" />
           <div className="flex justify-between items-center" style={{ marginBottom: '24px' }}>
             <h2>Your Tray 🧺</h2>
             <button className="ghost" style={{ padding: '4px 12px' }} onClick={() => setIsCartOpen(false)}>❌</button>

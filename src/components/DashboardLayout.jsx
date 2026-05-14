@@ -88,20 +88,21 @@ export default function DashboardLayout({ sidebarItems, children, onLogout, user
       </div>
 
       {/* Mobile Bottom Nav */}
-      <nav className="mobile-nav">
+      <nav className="mobile-nav" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 12px))', paddingTop: '8px' }}>
         {sidebarItems.map(item => (
           <button
             key={item.label}
             className={`mobile-nav-item ${item.active ? 'active' : ''}`}
             onClick={item.onClick}
+            style={{ padding: '8px 4px', minHeight: '48px' }}
           >
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
+            <span style={{ fontSize: '1.4rem', marginBottom: '2px' }}>{item.icon}</span>
+            <span style={{ fontSize: '0.75rem' }}>{item.label}</span>
           </button>
         ))}
-        <button className="mobile-nav-item" onClick={onLogout}>
-          <span>🚪</span>
-          <span>Logout</span>
+        <button className="mobile-nav-item" onClick={onLogout} style={{ padding: '8px 4px', minHeight: '48px' }}>
+          <span style={{ fontSize: '1.4rem', marginBottom: '2px' }}>🚪</span>
+          <span style={{ fontSize: '0.75rem' }}>Logout</span>
         </button>
       </nav>
     </>

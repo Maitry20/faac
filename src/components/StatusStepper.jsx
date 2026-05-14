@@ -11,7 +11,7 @@ export default function StatusStepper({ currentStatus, interactive = false, onSt
   const ICONS = ['📥', '👨‍🍳', '✅', '🎉', '🛍️'];
 
   return (
-    <div className="stepper">
+    <div className="stepper" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: '16px' }}>
       <div className="step-line-progress" style={{ width: `${progressPercent}%` }}></div>
       {STATUSES.map((status, idx) => {
         const isCompleted = idx < currentIndex;
@@ -32,9 +32,10 @@ export default function StatusStepper({ currentStatus, interactive = false, onSt
                 onStatusClick(status);
               }
             }}
+            style={{ flexShrink: 0 }}
           >
             <div className={`step-icon ${animClass}`} style={{ display: 'inline-block' }}>{ICONS[idx]}</div>
-            <span className="step-label">{status}</span>
+            <span className="step-label" style={{ whiteSpace: 'normal', textAlign: 'center', width: '65px', fontSize: '0.68rem', lineHeight: '1.1', top: '38px' }}>{status}</span>
           </div>
         );
       })}
