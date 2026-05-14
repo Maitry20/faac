@@ -464,19 +464,19 @@ echo -e "${GREEN}🔥 LIVE AWS API GATEWAY URL: $INVOKE_URL${NC}\n"
 
 
 # 7. AUTOMATICALLY LINK REACT APP
-echo -e "${YELLOW}[7/7] Linkage: Updating React Frontend (src/App.jsx)...${NC}"
+echo -e "${YELLOW}[7/7] Linkage: Updating React Frontend (src/app/page.jsx)...${NC}"
 node -e "
 const fs = require('fs');
-let content = fs.readFileSync('src/App.jsx', 'utf8');
-const replacement = 'export const API_URL = \"$INVOKE_URL\";';
-content = content.replace(/export const API_URL = \".*\";/, replacement);
-fs.writeFileSync('src/App.jsx', content, 'utf8');
+let content = fs.readFileSync('src/app/page.jsx', 'utf8');
+const replacement = 'const API_URL = \"$INVOKE_URL\";';
+content = content.replace(/const API_URL = ['\"].*['\"];/, replacement);
+fs.writeFileSync('src/app/page.jsx', content, 'utf8');
 "
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}🎉 SUCCESS! src/App.jsx has been automatically updated with your live AWS database URL!${NC}"
+    echo -e "${GREEN}🎉 SUCCESS! src/app/page.jsx has been automatically updated with your live AWS database URL!${NC}"
 else
-    echo -e "${RED}❌ Failed to auto-link React App. Please manually update the API_URL in src/App.jsx to: $INVOKE_URL${NC}"
+    echo -e "${RED}❌ Failed to auto-link React App. Please manually update the API_URL in src/app/page.jsx to: $INVOKE_URL${NC}"
 fi
 
 echo -e "\n${BLUE}====================================================${NC}"

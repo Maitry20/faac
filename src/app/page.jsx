@@ -32,7 +32,7 @@ const INITIAL_MOCK_DATA = {
 };
 
 const STORAGE_KEY = 'faac_db_data_v2';
-const API_URL = 'https://30evvscwbe.execute-api.us-east-1.amazonaws.com/prod/sync';
+const API_URL = 'https://30evvscwbe.execute-api.us-east-1.amazonaws.com';
 
 const playClickSound = () => {
   try {
@@ -84,6 +84,51 @@ export default function App() {
       };
       window.addEventListener('storage', handleStorage);
 
+      // Load initial data from AWS
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        const loadAWSData = async () => {
+          try {
+            const [profRes, menuRes, ordRes, revRes] = await Promise.all([
+              fetch(`${API_URL}/profiles`),
+              fetch(`${API_URL}/menuItems`),
+              fetch(`${API_URL}/orders`),
+              fetch(`${API_URL}/reviews`)
+            ]);
+            if (profRes.ok && menuRes.ok && ordRes.ok && revRes.ok) {
+              const profiles = await profRes.json();
+              const menuItems = await menuRes.json();
+              const orders = await ordRes.json();
+              const reviews = await revRes.json();
+
+              const hasData = profiles.length > 0 || menuItems.length > 0 || orders.length > 0 || reviews.length > 0;
+              if (!hasData) {
+                // Seed AWS database with INITIAL_MOCK_DATA
+                await Promise.all([
+                  ...INITIAL_MOCK_DATA.profiles.map(p => fetch(`${API_URL}/profiles`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })),
+                  ...INITIAL_MOCK_DATA.menuItems.map(m => fetch(`${API_URL}/menuItems`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(m) })),
+                  ...INITIAL_MOCK_DATA.orders.map(o => fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) })),
+                  ...INITIAL_MOCK_DATA.reviews.map(r => fetch(`${API_URL}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }))
+                ]);
+                setDbData(INITIAL_MOCK_DATA);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_MOCK_DATA));
+              } else {
+                const loadedData = {
+                  profiles: profiles.length > 0 ? profiles : INITIAL_MOCK_DATA.profiles,
+                  menuItems: menuItems.length > 0 ? menuItems : INITIAL_MOCK_DATA.menuItems,
+                  orders: orders,
+                  reviews: reviews
+                };
+                setDbData(loadedData);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedData));
+              }
+            }
+          } catch (err) {
+            console.warn('AWS fetch failed, using local storage/mock data:', err);
+          }
+        };
+        loadAWSData();
+      }
+
       const interval = setInterval(() => {
         const current = localStorage.getItem(STORAGE_KEY);
         if (current) {
@@ -131,26 +176,12 @@ export default function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const syncWithAWS = async (updatedData) => {
-    try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData)
-      });
-      if (!res.ok) throw new Error('AWS Sync Failed');
-    } catch (err) {
-      console.warn('Backend sync failed, saving locally:', err);
-    }
-  };
-
   const saveDb = (updater) => {
     setDbData(prev => {
       const next = updater(prev);
       if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       }
-      syncWithAWS(next);
       return next;
     });
   };
@@ -160,44 +191,124 @@ export default function App() {
     menuItems: dbData.menuItems,
     orders: dbData.orders,
     reviews: dbData.reviews,
-    addProfile: (p) => saveDb(d => ({ ...d, profiles: [...d.profiles, p] })),
-    updateProfile: (id, updates) => saveDb(d => ({
-      ...d, profiles: d.profiles.map(p => p.id === id ? { ...p, ...updates } : p)
-    })),
-    deleteProfile: (id) => saveDb(d => ({
-      ...d, 
-      profiles: d.profiles.filter(p => p.id !== id),
-      menuItems: d.menuItems.filter(m => m.stall_id !== id),
-      orders: d.orders.filter(o => o.stall_id !== id)
-    })),
-    addMenuItem: (m) => saveDb(d => ({ ...d, menuItems: [...d.menuItems, m] })),
-    toggleItemAvailability: (id) => saveDb(d => ({
-      ...d, menuItems: d.menuItems.map(m => m.id === id ? { ...m, available: !m.available } : m)
-    })),
-    deleteMenuItem: (id) => saveDb(d => ({
-      ...d, menuItems: d.menuItems.filter(m => m.id !== id)
-    })),
-    addOrder: (o) => saveDb(d => ({ ...d, orders: [...d.orders, o] })),
-    updateOrderStatus: (id, status) => saveDb(d => ({
-      ...d, orders: d.orders.map(o => o.id === id ? { ...o, status } : o)
-    })),
-    deleteOrder: (id) => saveDb(d => ({
-      ...d, orders: d.orders.filter(o => o.id !== id)
-    })),
-    toggleStallApproval: (id) => saveDb(d => ({
-      ...d, profiles: d.profiles.map(p => p.id === id ? { ...p, is_approved: !p.is_approved } : p)
-    })),
-    addReview: (r) => saveDb(d => ({ ...d, reviews: [...(d.reviews || []), r] })),
-    toggleFavorite: (userId, stallId) => saveDb(d => {
-      const user = d.profiles.find(p => p.id === userId);
-      if (!user) return d;
+
+    addProfile: (p) => {
+      saveDb(d => ({ ...d, profiles: [...d.profiles, p] }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/profiles`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).catch(console.error);
+      }
+    },
+
+    updateProfile: (id, updates) => {
+      saveDb(d => ({
+        ...d, profiles: d.profiles.map(p => p.id === id ? { ...p, ...updates } : p)
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/profiles`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }).catch(console.error);
+      }
+    },
+
+    deleteProfile: (id) => {
+      saveDb(d => ({
+        ...d, 
+        profiles: d.profiles.filter(p => p.id !== id),
+        menuItems: d.menuItems.filter(m => m.stall_id !== id),
+        orders: d.orders.filter(o => o.stall_id !== id)
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/profiles`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(console.error);
+        const menuToDelete = dbData.menuItems.filter(m => m.stall_id === id);
+        const ordersToDelete = dbData.orders.filter(o => o.stall_id === id);
+        Promise.all([
+          ...menuToDelete.map(m => fetch(`${API_URL}/menuItems`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: m.id }) })),
+          ...ordersToDelete.map(o => fetch(`${API_URL}/orders`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: o.id }) }))
+        ]).catch(console.error);
+      }
+    },
+
+    addMenuItem: (m) => {
+      saveDb(d => ({ ...d, menuItems: [...d.menuItems, m] }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/menuItems`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(m) }).catch(console.error);
+      }
+    },
+
+    toggleItemAvailability: (id) => {
+      const item = dbData.menuItems.find(m => m.id === id);
+      const newStatus = item ? !item.available : false;
+      saveDb(d => ({
+        ...d, menuItems: d.menuItems.map(m => m.id === id ? { ...m, available: !m.available } : m)
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe') && item) {
+        fetch(`${API_URL}/menuItems`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, available: newStatus }) }).catch(console.error);
+      }
+    },
+
+    deleteMenuItem: (id) => {
+      saveDb(d => ({
+        ...d, menuItems: d.menuItems.filter(m => m.id !== id)
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/menuItems`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(console.error);
+      }
+    },
+
+    addOrder: (o) => {
+      saveDb(d => ({ ...d, orders: [...d.orders, o] }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) }).catch(console.error);
+      }
+    },
+
+    updateOrderStatus: (id, status) => {
+      saveDb(d => ({
+        ...d, orders: d.orders.map(o => o.id === id ? { ...o, status } : o)
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/orders`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) }).catch(console.error);
+      }
+    },
+
+    deleteOrder: (id) => {
+      saveDb(d => ({
+        ...d, orders: d.orders.filter(o => o.id !== id)
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/orders`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(console.error);
+      }
+    },
+
+    toggleStallApproval: (id) => {
+      const stall = dbData.profiles.find(p => p.id === id);
+      const newApproval = stall ? !stall.is_approved : false;
+      saveDb(d => ({
+        ...d, profiles: d.profiles.map(p => p.id === id ? { ...p, is_approved: !p.is_approved } : p)
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe') && stall) {
+        fetch(`${API_URL}/profiles`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_approved: newApproval }) }).catch(console.error);
+      }
+    },
+
+    addReview: (r) => {
+      saveDb(d => ({ ...d, reviews: [...(d.reviews || []), r] }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }).catch(console.error);
+      }
+    },
+
+    toggleFavorite: (userId, stallId) => {
+      const user = dbData.profiles.find(p => p.id === userId);
+      if (!user) return;
       const favs = user.favorite_stalls || [];
       const updatedFavs = favs.includes(stallId) ? favs.filter(id => id !== stallId) : [...favs, stallId];
-      return {
+      saveDb(d => ({
         ...d,
         profiles: d.profiles.map(p => p.id === userId ? { ...p, favorite_stalls: updatedFavs } : p)
-      };
-    })
+      }));
+      if (API_URL && !API_URL.includes('30evvscwbe')) {
+        fetch(`${API_URL}/profiles`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: userId, favorite_stalls: updatedFavs }) }).catch(console.error);
+      }
+    }
   };
 
   const handleAdminLogin = (email, password) => {
