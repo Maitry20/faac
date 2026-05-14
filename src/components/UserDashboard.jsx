@@ -30,6 +30,7 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   const [showPayment, setShowPayment] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedFoodCourt, setSelectedFoodCourt] = useState('All');
   const [reviewDraft, setReviewDraft] = useState({ orderId: null, stallId: null, rating: 5, comment: '' });
 
   // Group Tray State
@@ -93,6 +94,7 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   }, [isCartOpen, selectedStall, db.orders]);
 
   const categories = ['All', 'Fast Food', 'Asian', 'Healthy', 'Burgers', 'Beverages'];
+  const foodCourtsList = ['All', 'North Food Court', 'South Plaza', 'Central Cafeteria', 'Student Union'];
   const userProfile = db.profiles.find(p => p.id === session.id) || session.profileData;
 
   useEffect(() => {
@@ -109,7 +111,8 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     const filteredStalls = allStalls.filter(st => {
       const matchesSearch = (st.stall_name || '').toLowerCase().includes((searchQuery || '').toLowerCase());
       const matchesCategory = selectedCategory === 'All' || (st.categories && st.categories.includes(selectedCategory));
-      return matchesSearch && matchesCategory;
+      const matchesFoodCourt = selectedFoodCourt === 'All' || st.food_court === selectedFoodCourt;
+      return matchesSearch && matchesCategory && matchesFoodCourt;
     });
     setStalls(filteredStalls);
 
@@ -133,7 +136,7 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
         setMenu(db.menuItems.filter(m => m.stall_id === selectedStall.id));
       }
     }
-  }, [db, session.id, selectedStall, searchQuery, selectedCategory, exitingOrders]);
+  }, [db, session.id, selectedStall, searchQuery, selectedCategory, selectedFoodCourt, exitingOrders]);
 
   const openStallMenu = (stall) => {
     setSelectedStall(stall);
@@ -150,7 +153,8 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     setView('menu');
   };
 
-  const submitReview = () => {
+  const submitReview = (e) => {
+    e.preventDefault();
     db.addReview({
       id: generateUUID(),
       order_id: reviewDraft.orderId,
@@ -301,15 +305,26 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
             </button>
           </div>
           
-          <div className="flex gap-2" style={{ marginBottom: '16px' }}>
+          <div className="flex gap-4 items-center" style={{ marginBottom: '16px', flexWrap: 'wrap' }}>
             <input 
               type="text" 
               placeholder="Search for stalls or dishes..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ flex: 1, margin: 0 }}
+              style={{ flex: 1, margin: 0, minWidth: '250px' }}
             />
+            <div className="flex items-center gap-2">
+              <span style={{ fontWeight: 800, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>📍 Food Court:</span>
+              <select 
+                value={selectedFoodCourt} 
+                onChange={e => setSelectedFoodCourt(e.target.value)}
+                style={{ margin: 0, borderRadius: '16px', padding: '8px 16px', fontWeight: 700 }}
+              >
+                {foodCourtsList.map(fc => <option key={fc} value={fc}>{fc === 'All' ? 'All Locations' : fc}</option>)}
+              </select>
+            </div>
           </div>
+          
           <div className="flex gap-2" style={{ overflowX: 'auto', marginBottom: '24px', paddingBottom: '8px' }}>
             {categories.map(cat => (
               <button 
@@ -326,8 +341,8 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
           <div className="grid-cards">
             {stalls.length === 0 ? (
               <div className="empty-state card col-span-full">
-                <h2>No stalls yet 🏗️</h2>
-                <p>Check back later when stalls register!</p>
+                <h2>No stalls found 🏗️</h2>
+                <p>Try selecting a different food court or category!</p>
               </div>
             ) : (
               stalls.map(stall => (
@@ -348,7 +363,12 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
                     <h3 style={{ margin: '0 0 4px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
                     {stall.rating && <span style={{ fontWeight: 'bold' }}>⭐ {stall.rating.toFixed(1)} ({stall.reviewCount})</span>}
                   </div>
-                  <span className="badge">⏱️ Est. Wait: {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
+                  <div className="flex justify-between items-center" style={{ marginTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <span className="badge">⏱️ Est. Wait: {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
+                    <span className="badge" style={{ background: 'var(--current-primary)', opacity: 0.9, color: '#fff' }}>
+                      📍 {stall.food_court || 'North Food Court'}
+                    </span>
+                  </div>
                   {stall.categories && <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '8px' }}>{stall.categories.join(' • ')}</div>}
                 </div>
               ))

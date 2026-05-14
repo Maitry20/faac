@@ -55,7 +55,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   const [menu, setMenu] = useState([]);
   const [newItem, setNewItem] = useState({ name: '', price: '', emoji: '🍲', description: '', category: 'Fast Food', available: true, photo: '' });
   const [photoType, setPhotoType] = useState('emoji'); // 'emoji' vs 'upload'
-  const [stallProfile, setStallProfile] = useState({ stall_name: '', min_pickup_time: 10, promotion: '', banner_url: '', categories: ['Fast Food'] });
+  const [stallProfile, setStallProfile] = useState({ stall_name: '', min_pickup_time: 10, promotion: '', banner_url: '', categories: ['Fast Food'], food_court: 'North Food Court' });
   const [searchQuery, setSearchQuery] = useState('');
 
   const [reviews, setReviews] = useState([]);
@@ -92,7 +92,8 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
         min_pickup_time: profile.min_pickup_time || 10,
         promotion: profile.promotion || '',
         banner_url: profile.banner_url || '',
-        categories: profile.categories || ['Fast Food']
+        categories: profile.categories || ['Fast Food'],
+        food_court: profile.food_court || 'North Food Court'
       });
     }
 
@@ -170,6 +171,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   }, [db.orders, session.id]);
 
   const categoriesList = ['Fast Food', 'Asian', 'Healthy', 'Burgers', 'Beverages', 'Desserts'];
+  const foodCourtsList = ['North Food Court', 'South Plaza', 'Central Cafeteria', 'Student Union'];
 
   const filteredOrders = orders.filter(o => {
     const query = searchQuery.toLowerCase();
@@ -592,6 +594,11 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
 
             <label>Minimum Preparation Time (minutes)</label>
             <input type="number" value={stallProfile.min_pickup_time} onChange={e => setStallProfile({...stallProfile, min_pickup_time: parseInt(e.target.value)})} required />
+
+            <label>Food Court Location 📍</label>
+            <select value={stallProfile.food_court} onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} style={{ marginBottom: '24px' }}>
+              {foodCourtsList.map(fc => <option key={fc} value={fc}>{fc}</option>)}
+            </select>
 
             <label>Stall Categories</label>
             <div className="flex gap-2" style={{ flexWrap: 'wrap', marginBottom: '24px' }}>

@@ -7,9 +7,9 @@ import ToastContainer from '../components/ToastContainer';
 const INITIAL_MOCK_DATA = {
   profiles: [
     { id: 'u1', email: 'foodie@test.com', password: 'password', role: 'user', name: 'Maitry Patel', favorite_stalls: ['s1'] },
-    { id: 's1', email: 'burger@stall.com', password: 'password', role: 'stall', stall_name: 'Campus Burgers 🍔', min_pickup_time: 15, is_approved: true, promotion: 'Free Fries on orders above ₹300!', banner_url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=80', categories: ['Burgers', 'Fast Food'] },
-    { id: 's2', email: 'sushi@stall.com', password: 'password', role: 'stall', stall_name: 'Tokyo Express 🍣', min_pickup_time: 20, is_approved: true, promotion: '10% Off Student ID', banner_url: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80', categories: ['Asian', 'Healthy'] },
-    { id: 's3', email: 'pending@stall.com', password: 'password', role: 'stall', stall_name: 'Healthy Bowls 🥗', min_pickup_time: 10, is_approved: false, banner_url: '', categories: ['Healthy'] }
+    { id: 's1', email: 'burger@stall.com', password: 'password', role: 'stall', stall_name: 'Campus Burgers 🍔', min_pickup_time: 15, is_approved: true, promotion: 'Free Fries on orders above ₹300!', banner_url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=80', categories: ['Burgers', 'Fast Food'], food_court: 'North Food Court' },
+    { id: 's2', email: 'sushi@stall.com', password: 'password', role: 'stall', stall_name: 'Tokyo Express 🍣', min_pickup_time: 20, is_approved: true, promotion: '10% Off Student ID', banner_url: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80', categories: ['Asian', 'Healthy'], food_court: 'Central Cafeteria' },
+    { id: 's3', email: 'pending@stall.com', password: 'password', role: 'stall', stall_name: 'Healthy Bowls 🥗', min_pickup_time: 10, is_approved: false, banner_url: '', categories: ['Healthy'], food_court: 'South Plaza' }
   ],
   menuItems: [
     { id: 'm1', stall_id: 's1', name: 'Classic Cheesy Burger', price: 149.00, emoji: '🍔', description: 'Juicy patty, melted cheese, crisp lettuce, secret sauce', category: 'Burgers', available: true, photo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&q=80' },
