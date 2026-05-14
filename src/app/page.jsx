@@ -74,15 +74,42 @@ export default function App() {
       const savedTheme = localStorage.getItem('faac_theme') || 'light';
       setTheme(savedTheme);
       document.body.className = savedTheme;
-    }
 
-    const handleClick = () => {
-      playClickSound();
-    };
-    window.addEventListener('click', handleClick);
-    return () => {
-      window.removeEventListener('click', handleClick);
-    };
+      const handleStorage = (e) => {
+        if (e.key === STORAGE_KEY && e.newValue) {
+          try {
+            setDbData(JSON.parse(e.newValue));
+          } catch (err) {}
+        }
+      };
+      window.addEventListener('storage', handleStorage);
+
+      const interval = setInterval(() => {
+        const current = localStorage.getItem(STORAGE_KEY);
+        if (current) {
+          try {
+            setDbData(prev => {
+              const prevStr = JSON.stringify(prev);
+              if (prevStr !== current) {
+                return JSON.parse(current);
+              }
+              return prev;
+            });
+          } catch (err) {}
+        }
+      }, 2000);
+
+      const handleClick = () => {
+        playClickSound();
+      };
+      window.addEventListener('click', handleClick);
+
+      return () => {
+        window.removeEventListener('storage', handleStorage);
+        window.removeEventListener('click', handleClick);
+        clearInterval(interval);
+      };
+    }
   }, []);
 
   const handleToggleTheme = () => {
