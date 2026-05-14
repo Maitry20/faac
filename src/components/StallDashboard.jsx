@@ -111,10 +111,13 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
 
   const handleAddItem = (e) => {
     e.preventDefault();
+    const finalEmoji = newItem.emoji === '🍲' ? detectEmoji(newItem.name + ' ' + newItem.description + ' ' + newItem.category) : newItem.emoji;
     const itemData = {
       id: generateUUID(),
       stall_id: session.id,
       ...newItem,
+      emoji: finalEmoji,
+      photo: photoType === 'emoji' ? '' : newItem.photo,
       price: parseFloat(newItem.price)
     };
     db.addMenuItem(itemData);
@@ -440,10 +443,32 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
               )}
 
               <label>Description</label>
-              <textarea value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} rows="2" required />
+              <textarea 
+                value={newItem.description} 
+                onChange={e => {
+                  const description = e.target.value;
+                  setNewItem(prev => ({
+                    ...prev, 
+                    description,
+                    emoji: prev.emoji === '🍲' ? detectEmoji(prev.name + ' ' + description) : prev.emoji
+                  }));
+                }} 
+                rows="2" 
+                required 
+              />
 
               <label>Category</label>
-              <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
+              <select 
+                value={newItem.category} 
+                onChange={e => {
+                  const category = e.target.value;
+                  setNewItem(prev => ({
+                    ...prev, 
+                    category,
+                    emoji: prev.emoji === '🍲' ? detectEmoji(prev.name + ' ' + prev.description + ' ' + category) : prev.emoji
+                  }));
+                }}
+              >
                 {categoriesList.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
 
