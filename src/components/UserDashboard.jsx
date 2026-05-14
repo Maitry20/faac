@@ -32,6 +32,14 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [reviewDraft, setReviewDraft] = useState({ orderId: null, stallId: null, rating: 5, comment: '' });
 
+  // Group Tray State
+  const [groupTray, setGroupTray] = useState(null); // { id, host, stallId, stallName, members: [{ id: 'm1', name: 'You', items: [] }] }
+  const [newMemberName, setNewMemberName] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState('m1');
+  const [showGroupSplitModal, setShowGroupSplitModal] = useState(false);
+  const [joinRoomCode, setJoinRoomCode] = useState('');
+  const [showJoinModal, setShowJoinModal] = useState(false);
+
   const stats = useMemo(() => {
     const allUserOrders = db.orders.filter(o => o.user_id === session.id);
     const totalSpent = allUserOrders.reduce((sum, o) => sum + (o.total || 0), 0);
@@ -163,6 +171,22 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   };
 
   const addToCart = (item) => {
+    if (groupTray) {
+      const currentMember = groupTray.members.find(m => m.id === selectedMemberId);
+      if (!currentMember) return;
+      const existing = currentMember.items.find(i => i.id === item.id);
+      let updatedItems;
+      if (existing) {
+        updatedItems = currentMember.items.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+      } else {
+        updatedItems = [...currentMember.items, { ...item, qty: 1 }];
+      }
+      const updatedMembers = groupTray.members.map(m => m.id === selectedMemberId ? { ...m, items: updatedItems } : m);
+      setGroupTray({ ...groupTray, members: updatedMembers });
+      showToast(`Added ${item.name} for ${currentMember.name} 🍱`);
+      return;
+    }
+
     if (cart.length > 0 && cart[0].stall_id !== selectedStall.id) {
       showToast("You can only order from one stall at a time! 🛒", "error");
       return;
@@ -217,6 +241,43 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     setView('orders');
   };
 
+  const startGroupTray = () => {
+    const trayId = `GRP-${Math.floor(100 + Math.random() * 900)}`;
+    setGroupTray({
+      id: trayId,
+      host: userProfile?.name || 'You',
+      stallId: selectedStall.id,
+      stallName: selectedStall.stall_name,
+      members: [{ id: 'm1', name: userProfile?.name || 'You', items: [] }]
+    });
+    setSelectedMemberId('m1');
+    showToast(`Group Tray #${trayId} created! Invite friends. 👥`, "success");
+  };
+
+  const handleJoinRoom = () => {
+    if (!joinRoomCode.trim()) return;
+    const code = joinRoomCode.trim().toUpperCase();
+    const mockStall = stalls[0] || db.profiles.find(p => p.role === 'stall');
+    
+    setSelectedStall(mockStall);
+    setMenu(db.menuItems.filter(m => m.stall_id === mockStall.id));
+    setGroupTray({
+      id: code,
+      host: 'Friend',
+      stallId: mockStall.id,
+      stallName: mockStall.stall_name,
+      members: [
+        { id: 'm-host', name: 'Host Friend', items: [{ id: 'm1', name: 'Classic Burger', price: 149, qty: 1, emoji: '🍔' }] },
+        { id: 'm1', name: userProfile?.name || 'You', items: [] }
+      ]
+    });
+    setSelectedMemberId('m1');
+    setShowJoinModal(false);
+    setJoinRoomCode('');
+    setView('menu');
+    showToast(`Successfully joined Room #${code}! 🤝`, "success");
+  };
+
   const sidebarItems = [
     { label: 'Home', icon: '🏠', active: view === 'home' || view === 'menu', onClick: () => { setView('home'); setSelectedStall(null); } },
     { label: 'My Orders', icon: '🧾', active: view === 'orders', onClick: () => setView('orders') },
@@ -229,9 +290,16 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="😋 Foodie" onToggleTheme={onToggleTheme} theme={theme}>
       {view === 'home' && (
         <div className="animated-list">
-          <img src="/food_banner.png" alt="Delicious Food Banner" className="top-banner" />
-          
-          <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>Discover Stalls</h2>
+          <div className="flex justify-between items-center" style={{ marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <img src="/food_banner.png" alt="Delicious Food Banner" className="top-banner" style={{ width: '100%' }} />
+          </div>
+
+          <div className="flex justify-between items-center" style={{ marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <h2 style={{ fontSize: '2rem', margin: 0 }}>Discover Stalls</h2>
+            <button className="accent card" style={{ padding: '10px 20px', fontWeight: '900' }} onClick={() => setShowJoinModal(true)}>
+              🤝 Join Group Room
+            </button>
+          </div>
           
           <div className="flex gap-2" style={{ marginBottom: '16px' }}>
             <input 
@@ -291,18 +359,50 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
 
       {view === 'menu' && selectedStall && (
         <div className="animated-list">
-          <button className="back-btn" onClick={() => { setView('home'); setSelectedStall(null); }}>
-            <div className="arrow-circle">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            Back to Stalls
-          </button>
+          <div className="flex justify-between items-center" style={{ marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <button className="back-btn" onClick={() => { setView('home'); setSelectedStall(null); }} style={{ margin: 0 }}>
+              <div className="arrow-circle">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 12H5M5 12L12 19M5 12L12 5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              Back to Stalls
+            </button>
+
+            {!groupTray ? (
+              <button className="accent card" style={{ padding: '10px 24px', fontWeight: '900', fontSize: '1.1rem' }} onClick={startGroupTray}>
+                👥 Start Group Tray (Split Bill)
+              </button>
+            ) : (
+              <button className="ghost" style={{ padding: '10px 24px', borderColor: '#EF4444', color: '#EF4444' }} onClick={() => setGroupTray(null)}>
+                Leave Group Room
+              </button>
+            )}
+          </div>
           
           {selectedStall.promotion && (
             <div className="promotion-banner">
               📢 <strong>Special Offer:</strong> {selectedStall.promotion}
+            </div>
+          )}
+
+          {groupTray && (
+            <div className="card flex justify-between items-center" style={{ background: 'var(--current-surface-hover)', borderColor: 'var(--current-primary)', borderWidth: '2px', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <span className="badge" style={{ background: 'var(--current-accent)', color: '#2D2D2D', marginBottom: '4px' }}>👥 Active Room: #{groupTray.id}</span>
+                <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Ordering for: <span style={{ color: 'var(--current-primary)' }}>{groupTray.members.find(m => m.id === selectedMemberId)?.name}</span></div>
+              </div>
+              <div className="flex gap-2 items-center flex-wrap">
+                <label style={{ fontWeight: 'bold', opacity: 0.7 }}>Select Person:</label>
+                <select value={selectedMemberId} onChange={e => setSelectedMemberId(e.target.value)} style={{ margin: 0, padding: '8px 16px', width: 'auto', borderRadius: '12px' }}>
+                  {groupTray.members.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <button className="primary" style={{ padding: '8px 20px', fontWeight: '900' }} onClick={() => setIsCartOpen(true)}>
+                  View Hub 🧺 ({groupTray.members.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.qty, 0), 0)})
+                </button>
+              </div>
             </div>
           )}
 
@@ -356,7 +456,10 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
               {myOrders.map(order => (
                 <div key={order.id} className={`card ${animatingOrders.has(order.id) ? 'card-exit' : ''}`}>
                   <div className="flex justify-between items-center order-header" style={{ marginBottom: '16px' }}>
-                    <h3 style={{ margin: 0 }}>{order.stall_name}</h3>
+                    <h3 style={{ margin: 0 }}>
+                      {order.stall_name} 
+                      {order.id.startsWith('grp-') && <span className="badge" style={{ marginLeft: '8px', background: 'var(--current-accent)', color: '#2D2D2D' }}>👥 Group Order</span>}
+                    </h3>
                     <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>₹{Number(order.total).toFixed(2)}</span>
                   </div>
                   <p style={{ opacity: 0.8, margin: '0 0 16px 0', fontSize: '0.9rem' }}>
@@ -440,10 +543,15 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
       )}
 
       {/* Cart Drawer */}
-      {cart.length > 0 && (
+      {(cart.length > 0 || groupTray) && (
         <button className="primary floating-cart-btn" onClick={() => setIsCartOpen(true)}>
           🛒
-          <div className="cart-badge">{cart.reduce((s,i) => s + i.qty, 0)}</div>
+          <div className="cart-badge">
+            {groupTray 
+              ? groupTray.members.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.qty, 0), 0)
+              : cart.reduce((s,i) => s + i.qty, 0)
+            }
+          </div>
         </button>
       )}
 
@@ -451,40 +559,127 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
         <div className={`cart-drawer ${isCartOpen ? 'open' : ''}`} onClick={e => e.stopPropagation()}>
           <div style={{ width: '40px', height: '5px', background: 'rgba(128,128,128,0.25)', borderRadius: '10px', margin: '0 auto 16px', display: 'block' }} className="mobile-only-pill" />
           <div className="flex justify-between items-center" style={{ marginBottom: '24px' }}>
-            <h2>Your Tray 🧺</h2>
+            <h2>{groupTray ? '👥 Group Tray Hub' : 'Your Tray 🧺'}</h2>
             <button className="ghost" style={{ padding: '4px 12px' }} onClick={() => setIsCartOpen(false)}>❌</button>
           </div>
           
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            {cart.map(item => (
-              <div key={item.id} className="menu-item-row">
+          {groupTray ? (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <div className="flex justify-between items-center" style={{ marginBottom: '16px', background: 'rgba(128,128,128,0.05)', padding: '12px', borderRadius: '12px' }}>
                 <div>
-                  <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {item.photo ? (
-                      <img src={item.photo} alt={item.name} style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }} />
-                    ) : (
-                      <span>{item.emoji}</span>
-                    )}
-                    <span>{item.name}</span>
-                  </div>
-                  <div style={{ opacity: 0.8 }}>₹{Number(item.price).toFixed(2)} x {item.qty}</div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.6, fontWeight: 'bold' }}>ROOM CODE</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--current-primary)' }}>{groupTray.id}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="card" style={{ padding: '4px 10px' }} onClick={() => {
-                    if (item.qty > 1) setCart(cart.map(c => c.id === item.id ? {...c, qty: c.qty - 1} : c));
-                    else setCart(cart.filter(c => c.id !== item.id));
-                  }}>-</button>
-                  <span style={{ fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{item.qty}</span>
-                  <button className="card" style={{ padding: '4px 10px' }} onClick={() => setCart(cart.map(c => c.id === item.id ? {...c, qty: c.qty + 1} : c))}>+</button>
-                </div>
+                <button className="ghost" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => {
+                  navigator.clipboard.writeText(`https://foodataclick.campus/join?room=${groupTray.id}`);
+                  showToast("Invite Link copied! Share on WhatsApp 🔗");
+                }}>Copy Room Link 🔗</button>
               </div>
-            ))}
-          </div>
+
+              {/* Add friend simulation */}
+              <div className="flex gap-2 items-center" style={{ marginBottom: '24px', background: 'var(--current-surface-hover)', padding: '12px', borderRadius: '12px', border: '1px dashed rgba(128,128,128,0.2)' }}>
+                <input 
+                  type="text" 
+                  placeholder="Simulate adding friend..." 
+                  value={newMemberName} 
+                  onChange={e => setNewMemberName(e.target.value)}
+                  style={{ margin: 0, flex: 1, padding: '8px 12px' }}
+                />
+                <button className="accent" style={{ padding: '8px 16px', fontWeight: 'bold' }} onClick={() => {
+                  if (!newMemberName.trim()) return;
+                  const newId = `m-${Date.now()}`;
+                  setGroupTray({
+                    ...groupTray,
+                    members: [...groupTray.members, { id: newId, name: newMemberName.trim(), items: [] }]
+                  });
+                  setSelectedMemberId(newId);
+                  setNewMemberName('');
+                  showToast("Friend joined tray! Select their name to order. 🙋‍♂️");
+                }}>Add Friend ➕</button>
+              </div>
+
+              {groupTray.members.map(member => {
+                const memberTotal = member.items.reduce((s, i) => s + (i.price * i.qty), 0);
+                return (
+                  <div key={member.id} className="card" style={{ marginBottom: '16px', padding: '16px', borderColor: member.id === selectedMemberId ? 'var(--current-primary)' : 'transparent', borderWidth: '2px' }}>
+                    <div className="flex justify-between items-center" style={{ borderBottom: '1px solid rgba(128,128,128,0.1)', paddingBottom: '8px', marginBottom: '12px' }}>
+                      <span style={{ fontWeight: '800', fontSize: '1.1rem', color: member.id === selectedMemberId ? 'var(--current-primary)' : 'inherit' }}>
+                        👤 {member.name} {member.id === selectedMemberId && '(Active)'}
+                      </span>
+                      <span style={{ fontWeight: 'bold' }}>₹{memberTotal.toFixed(2)}</span>
+                    </div>
+
+                    {member.items.length === 0 ? (
+                      <div style={{ opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem' }}>No items added yet</div>
+                    ) : (
+                      member.items.map(item => (
+                        <div key={item.id} className="menu-item-row" style={{ padding: '6px 0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{item.emoji}</span>
+                            <span>{item.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span style={{ opacity: 0.8 }}>₹{Number(item.price).toFixed(2)} x</span>
+                            <button className="card" style={{ padding: '2px 8px' }} onClick={() => {
+                              const updatedItems = member.items.map(i => i.id === item.id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0);
+                              setGroupTray({
+                                ...groupTray,
+                                members: groupTray.members.map(m => m.id === member.id ? { ...m, items: updatedItems } : m)
+                              });
+                            }}>-</button>
+                            <span style={{ fontWeight: 'bold', width: '16px', textAlign: 'center' }}>{item.qty}</span>
+                            <button className="card" style={{ padding: '2px 8px' }} onClick={() => {
+                              const updatedItems = member.items.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+                              setGroupTray({
+                                ...groupTray,
+                                members: groupTray.members.map(m => m.id === member.id ? { ...m, items: updatedItems } : m)
+                              });
+                            }}>+</button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {cart.map(item => (
+                <div key={item.id} className="menu-item-row">
+                  <div>
+                    <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {item.photo ? (
+                        <img src={item.photo} alt={item.name} style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }} />
+                      ) : (
+                        <span>{item.emoji}</span>
+                      )}
+                      <span>{item.name}</span>
+                    </div>
+                    <div style={{ opacity: 0.8 }}>₹{Number(item.price).toFixed(2)} x {item.qty}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button className="card" style={{ padding: '4px 10px' }} onClick={() => {
+                      if (item.qty > 1) setCart(cart.map(c => c.id === item.id ? {...c, qty: c.qty - 1} : c));
+                      else setCart(cart.filter(c => c.id !== item.id));
+                    }}>-</button>
+                    <span style={{ fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{item.qty}</span>
+                    <button className="card" style={{ padding: '4px 10px' }} onClick={() => setCart(cart.map(c => c.id === item.id ? {...c, qty: c.qty + 1} : c))}>+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ marginTop: '24px', borderTop: '2px solid rgba(128,128,128,0.2)', paddingTop: '16px' }}>
             <div className="flex justify-between" style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '16px' }}>
-              <span>Total:</span>
-              <span>₹{cartTotal.toFixed(2)}</span>
+              <span>{groupTray ? 'Group Total:' : 'Total:'}</span>
+              <span>
+                ₹{groupTray 
+                  ? groupTray.members.reduce((sum, m) => sum + m.items.reduce((s, i) => s + (i.price * i.qty), 0), 0).toFixed(2)
+                  : cartTotal.toFixed(2)
+                }
+              </span>
             </div>
             
             <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
@@ -517,13 +712,127 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
             </div>
 
             <div className="flex gap-2">
-              <button className="primary" style={{ width: '100%', padding: '12px', fontSize: '1.1rem' }} onClick={handleProceedToPayment}>
-                Proceed to Payment 💳
-              </button>
+              {groupTray ? (
+                <button className="primary" style={{ width: '100%', padding: '12px', fontSize: '1.1rem' }} onClick={() => {
+                  const totalItems = groupTray.members.reduce((sum, m) => sum + m.items.length, 0);
+                  if (totalItems === 0) {
+                    showToast("Please add items to your group tray first! 🧺", "error");
+                    return;
+                  }
+                  setShowGroupSplitModal(true);
+                }}>
+                  Split Bill & Checkout 💸
+                </button>
+              ) : (
+                <button className="primary" style={{ width: '100%', padding: '12px', fontSize: '1.1rem' }} onClick={handleProceedToPayment}>
+                  Proceed to Payment 💳
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Split Bill Calculator Modal */}
+      {showGroupSplitModal && groupTray && (
+        <div className="modal-overlay" onClick={() => setShowGroupSplitModal(false)}>
+          <div className="card flex-col gap-4" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '450px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex justify-between items-center">
+              <h2 style={{ margin: 0 }}>Split Bill Calculator 💸</h2>
+              <button className="ghost" style={{ padding: '4px 10px' }} onClick={() => setShowGroupSplitModal(false)}>❌</button>
+            </div>
+            <p style={{ opacity: 0.7, margin: 0, fontSize: '0.9rem' }}>
+              Instant breakdown for Room #{groupTray.id}. Send UPI reminders directly to your friends!
+            </p>
+
+            <div className="flex-col gap-3">
+              {groupTray.members.map(m => {
+                const mTotal = m.items.reduce((s, i) => s + (i.price * i.qty), 0);
+                return (
+                  <div key={m.id} className="card flex justify-between items-center" style={{ background: 'rgba(128,128,128,0.05)', padding: '12px 16px' }}>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '1.05rem' }}>👤 {m.name}</div>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{m.items.reduce((s,i) => s + i.qty, 0)} items</div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span style={{ fontWeight: '900', color: 'var(--current-primary)', fontSize: '1.1rem' }}>₹{mTotal.toFixed(2)}</span>
+                      {m.id !== 'm1' ? (
+                        <button className="accent" style={{ padding: '6px 12px', fontSize: '0.8rem', fontWeight: 'bold' }} onClick={() => {
+                          showToast(`UPI payment link sent to ${m.name} for ₹${mTotal.toFixed(2)}! 📲`, "success");
+                        }}>
+                          Request UPI 🔔
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--current-primary)' }}>Your Share</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="card flex justify-between items-center" style={{ background: 'var(--current-primary)', color: 'white' }}>
+              <span style={{ fontWeight: '900', fontSize: '1.2rem' }}>Grand Total</span>
+              <span style={{ fontWeight: '900', fontSize: '1.4rem' }}>
+                ₹{groupTray.members.reduce((sum, m) => sum + m.items.reduce((s, i) => s + (i.price * i.qty), 0), 0).toFixed(2)}
+              </span>
+            </div>
+
+            <button className="primary" style={{ width: '100%', padding: '14px', fontSize: '1.1rem' }} onClick={() => {
+              const allItems = groupTray.members.flatMap(m => m.items);
+              const totalAmount = groupTray.members.reduce((sum, m) => sum + m.items.reduce((s, i) => s + (i.price * i.qty), 0), 0);
+              
+              const orderData = {
+                id: `grp-ord-${Date.now().toString().slice(-4)}`,
+                user_id: session.id,
+                stall_id: groupTray.stallId,
+                items: allItems,
+                total: totalAmount,
+                pickup_time: new Date(Date.now() + 20 * 60000).toISOString(),
+                status: 'Order Received',
+                special_instructions: `Group Order (${groupTray.members.length} people) • Notes: ${specialInstructions}`,
+                created_at: new Date().toISOString()
+              };
+
+              db.addOrder(orderData);
+              showToast("Group Order placed successfully! 🎉 Check your order ledger.", "success");
+              setGroupTray(null);
+              setShowGroupSplitModal(false);
+              setIsCartOpen(false);
+              setView('orders');
+            }}>
+              Confirm & Place Group Order 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Join Room Modal */}
+      {showJoinModal && (
+        <div className="modal-overlay" onClick={() => setShowJoinModal(false)}>
+          <div className="card flex-col gap-4" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '350px' }}>
+            <div className="flex justify-between items-center">
+              <h2 style={{ margin: 0 }}>Join Group Tray 🤝</h2>
+              <button className="ghost" style={{ padding: '4px 10px' }} onClick={() => setShowJoinModal(false)}>❌</button>
+            </div>
+            <p style={{ opacity: 0.7, margin: 0, fontSize: '0.9rem' }}>
+              Enter the room code shared by your friend to order together!
+            </p>
+
+            <input 
+              type="text" 
+              placeholder="E.g. GRP-482" 
+              value={joinRoomCode} 
+              onChange={e => setJoinRoomCode(e.target.value)}
+              style={{ margin: 0, textTransform: 'uppercase' }}
+            />
+
+            <button className="primary" style={{ padding: '12px', fontSize: '1.1rem' }} onClick={handleJoinRoom}>
+              Join Room 🚀
+            </button>
+          </div>
+        </div>
+      )}
 
       {showPayment && (
         <div className="modal-overlay" onClick={() => setShowPayment(false)}>
