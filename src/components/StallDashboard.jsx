@@ -53,14 +53,14 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     if (typeof window !== 'undefined') {
       const parts = window.location.pathname.split('/');
       const slug = parts[parts.length - 1];
-      return ['orders', 'history', 'menu', 'analytics', 'settings'].includes(slug) ? slug : 'orders';
+      return ['home', 'orders', 'history', 'menu', 'analytics', 'settings'].includes(slug) ? slug : 'home';
     }
-    return 'orders';
-  }); // orders, history, menu, analytics, settings
+    return 'home';
+  }); // home, orders, history, menu, analytics, settings
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const newPath = view === 'orders' ? '/dashboard' : `/dashboard/${view}`;
+      const newPath = view === 'home' ? '/dashboard' : `/dashboard/${view}`;
       if (window.location.pathname !== newPath) {
         window.history.pushState({ view }, '', newPath + window.location.search);
       }
@@ -74,12 +74,14 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
       } else {
         const parts = window.location.pathname.split('/');
         const slug = parts[parts.length - 1];
-        setView(['orders', 'history', 'menu', 'analytics', 'settings'].includes(slug) ? slug : 'orders');
+        setView(['home', 'orders', 'history', 'menu', 'analytics', 'settings'].includes(slug) ? slug : 'home');
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  const [stallStatus, setStallStatus] = useState('Open'); // Open, Busy, Closed
   const [orders, setOrders] = useState([]);
   const [historyOrders, setHistoryOrders] = useState([]);
   const [menu, setMenu] = useState([]);
@@ -123,14 +125,75 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
         promotion: profile.promotion || '',
         banner_url: profile.banner_url || '',
         categories: profile.categories || ['Fast Food'],
-        food_court: profile.food_court || 'North Food Court'
+        food_court: profile.food_court || 'North Food Court',
+        status: profile.status || 'Open'
       });
+      setStallStatus(profile.status || 'Open');
     }
 
     if (db.reviews) {
       setReviews(db.reviews.filter(r => r.stall_id === session.id));
     }
   }, [db, session.id]);
+
+  const homeData = useMemo(() => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    const allStallOrders = db.orders.filter(o => o.stall_id === session.id);
+    const todayOrders = allStallOrders.filter(o => o.created_at.startsWith(today));
+    
+    const revenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const avgOrderValue = todayOrders.length > 0 ? revenue / todayOrders.length : 0;
+    
+    const statusCounts = {
+      'Queued': orders.filter(o => o.status === 'Order Received').length,
+      'Preparing': orders.filter(o => o.status === 'Cooking' || o.status === 'Cooked').length,
+      'Ready': orders.filter(o => o.status === 'Ready to Eat').length,
+      'Finished': historyOrders.filter(o => o.created_at.startsWith(today)).length
+    };
+
+    const itemSales = {};
+    todayOrders.forEach(o => {
+      o.items.forEach(it => {
+        itemSales[it.name] = (itemSales[it.name] || 0) + it.qty;
+      });
+    });
+    const popularItems = Object.entries(itemSales)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, qty]) => ({ name, qty }));
+
+    const delayedOrders = orders.filter(o => {
+      const pickup = new Date(o.pickup_time);
+      return pickup < now && o.status !== 'Ready to Eat';
+    });
+
+    const recentFeed = [...allStallOrders]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5)
+      .map(o => ({
+        id: o.id,
+        type: o.status === 'Order Received' ? 'NEW' : (o.status === 'Picked Up' ? 'COMPLETED' : 'UPDATE'),
+        message: o.status === 'Order Received' ? `New order #${o.id.slice(0,5)}` : `Order #${o.id.slice(0,5)} is ${o.status}`,
+        time: o.created_at
+      }));
+
+    const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+
+    return { 
+      revenue, 
+      todayCount: todayOrders.length, 
+      avgOrderValue, 
+      statusCounts, 
+      popularItems, 
+      delayedOrders, 
+      recentFeed,
+      avgRating,
+      totalReviews: reviews.length,
+      recentReview: reviews[0]
+    };
+  }, [db.orders, orders, historyOrders, reviews, session.id]);
 
   const updateStatus = (orderId, currentStatus) => {
     const nextIdx = STATUSES.indexOf(currentStatus) + 1;
@@ -165,7 +228,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
 
   const deleteItem = (itemId) => {
     db.deleteMenuItem(itemId);
-    setMenu(menu.filter(m => m.id === itemId));
+    setMenu(menu.filter(m => m.id !== itemId));
     showToast("Item removed from menu", "success");
   };
 
@@ -211,6 +274,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   });
 
   const sidebarItems = [
+    { label: 'Home', icon: '🏠', active: view === 'home', onClick: () => setView('home') },
     { label: 'Active Orders', icon: '🛎️', active: view === 'orders', onClick: () => setView('orders') },
     { label: 'History', icon: '📜', active: view === 'history', onClick: () => setView('history') },
     { label: 'Menu Manager', icon: '📋', active: view === 'menu', onClick: () => setView('menu') },
@@ -276,7 +340,349 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
           transform: translateY(-4px);
           box-shadow: 0 12px 28px rgba(255, 107, 107, 0.3);
         }
+
+        /* Home Dashboard Styles */
+        .home-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          margin-bottom: 32px;
+        }
+        @media (max-width: 1100px) { .home-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .home-grid { grid-template-columns: 1fr; } }
+
+        .stat-card {
+          background: var(--current-card);
+          padding: 24px;
+          border-radius: 24px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border: 2px solid transparent;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          position: relative;
+          overflow: hidden;
+        }
+        .stat-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 16px 36px rgba(0,0,0,0.08);
+          border-color: var(--current-primary);
+        }
+        .stat-card.urgent {
+          animation: pulse-red 2s infinite;
+          border-color: #EF4444;
+        }
+        @keyframes pulse-red {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .toggle-container {
+          display: flex;
+          background: rgba(128,128,128,0.1);
+          padding: 6px;
+          border-radius: 50px;
+          gap: 4px;
+        }
+        .toggle-btn {
+          flex: 1;
+          padding: 10px 20px;
+          border-radius: 40px;
+          font-size: 0.9rem;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border: none;
+          background: transparent;
+          color: inherit;
+        }
+        .toggle-btn.active {
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .toggle-btn.open.active { background: #10B981; color: white; }
+        .toggle-btn.busy.active { background: #F59E0B; color: white; }
+        .toggle-btn.closed.active { background: #EF4444; color: white; }
+
+        .feed-item {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          padding: 12px;
+          border-radius: 16px;
+          background: rgba(128,128,128,0.05);
+          margin-bottom: 12px;
+          transition: all 0.2s ease;
+        }
+        .feed-item:hover {
+          background: rgba(128,128,128,0.08);
+          transform: translateX(4px);
+        }
+
+        .delayed-alert {
+          background: #FEF2F2;
+          border: 2px solid #F87171;
+          color: #991B1B;
+          padding: 16px;
+          border-radius: 20px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          animation: glow-red 1.5s infinite alternate;
+        }
+        @keyframes glow-red {
+          from { box-shadow: 0 0 5px #F87171; }
+          to { box-shadow: 0 0 20px #F87171; }
+        }
+
+        @media (max-width: 768px) {
+          .mobile-column {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .revenue-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 16px;
+          }
+          .revenue-value {
+            font-size: 2.8rem !important;
+          }
+          .stat-grid-2 {
+            grid-template-columns: 1fr !important;
+          }
+          .welcome-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+          }
+          .delayed-alert {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 16px;
+            text-align: center;
+          }
+          .delayed-alert .flex {
+            flex-direction: column;
+          }
+          .home-grid {
+            gap: 12px !important;
+          }
+          .stat-card {
+            padding: 16px !important;
+          }
+        }
       `}</style>
+
+      {view === 'home' && (
+        <div className="animated-list">
+          <div className="flex justify-between items-center welcome-header" style={{ marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
+            <div>
+              <h1 style={{ fontSize: '2.5rem', marginBottom: '4px' }}>Welcome back, Chef! 👨‍🍳</h1>
+              <p style={{ opacity: 0.6, fontSize: '1.1rem', margin: 0 }}>Here's what's happening at your stall today.</p>
+            </div>
+            
+            <div className="flex-col gap-2">
+              <label style={{ fontSize: '0.8rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Stall Status</label>
+              <div className="toggle-container">
+                <button 
+                  className={`toggle-btn open ${stallStatus === 'Open' ? 'active' : ''}`}
+                  onClick={() => { 
+                    setStallStatus('Open'); 
+                    db.updateProfile(session.id, { ...stallProfile, status: 'Open' });
+                    showToast("Stall is now OPEN 🟢"); 
+                  }}
+                >Open</button>
+                <button 
+                  className={`toggle-btn busy ${stallStatus === 'Busy' ? 'active' : ''}`}
+                  onClick={() => { 
+                    setStallStatus('Busy'); 
+                    db.updateProfile(session.id, { ...stallProfile, status: 'Busy' });
+                    showToast("Stall is now BUSY 🟡"); 
+                  }}
+                >Busy</button>
+                <button 
+                  className={`toggle-btn closed ${stallStatus === 'Closed' ? 'active' : ''}`}
+                  onClick={() => { 
+                    setStallStatus('Closed'); 
+                    db.updateProfile(session.id, { ...stallProfile, status: 'Closed' });
+                    showToast("Stall is now CLOSED 🔴"); 
+                  }}
+                >Closed</button>
+              </div>
+            </div>
+          </div>
+
+          {homeData.delayedOrders.length > 0 && (
+            <div className="delayed-alert">
+              <div className="flex items-center gap-4">
+                <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                <div>
+                  <strong style={{ display: 'block' }}>Action Required: {homeData.delayedOrders.length} Delayed Orders</strong>
+                  <span style={{ fontSize: '0.9rem' }}>These orders are past their expected pickup time.</span>
+                </div>
+              </div>
+              <button className="primary" style={{ padding: '8px 16px', background: '#991B1B' }} onClick={() => setView('orders')}>
+                View Orders
+              </button>
+            </div>
+          )}
+
+          <div className="home-grid">
+            <div className="stat-card" style={{ borderLeft: '6px solid #6366F1' }}>
+              <div className="flex justify-between items-center">
+                <span style={{ fontSize: '2.5rem' }}>📥</span>
+                <span className="badge" style={{ background: '#6366F1' }}>New</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 900 }}>{homeData.statusCounts.Queued}</div>
+              <div style={{ opacity: 0.7, fontWeight: 700 }}>Queued Orders</div>
+            </div>
+
+            <div className="stat-card" style={{ borderLeft: '6px solid #F59E0B' }}>
+              <div className="flex justify-between items-center">
+                <span style={{ fontSize: '2.5rem' }}>🔥</span>
+                <span className="badge" style={{ background: '#F59E0B' }}>Preparing</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 900 }}>{homeData.statusCounts.Preparing}</div>
+              <div style={{ opacity: 0.7, fontWeight: 700 }}>Preparing</div>
+            </div>
+
+            <div className="stat-card" style={{ borderLeft: '6px solid #10B981' }}>
+              <div className="flex justify-between items-center">
+                <span style={{ fontSize: '2.5rem' }}>🎁</span>
+                <span className="badge" style={{ background: '#10B981' }}>Ready</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 900 }}>{homeData.statusCounts.Ready}</div>
+              <div style={{ opacity: 0.7, fontWeight: 700 }}>Ready for Pickup</div>
+            </div>
+
+            <div className="stat-card" style={{ borderLeft: '6px solid #3B82F6' }}>
+              <div className="flex justify-between items-center">
+                <span style={{ fontSize: '2.5rem' }}>✅</span>
+                <span className="badge" style={{ background: '#3B82F6' }}>Done</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 900 }}>{homeData.statusCounts.Finished}</div>
+              <div style={{ opacity: 0.7, fontWeight: 700 }}>Finished Today</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px', marginBottom: '32px' }} className="mobile-column">
+            <div className="flex-col gap-6">
+              <div className="card" style={{ padding: '32px' }}>
+                <h3 className="section-title">Today's Revenue</h3>
+                <div className="flex justify-between items-end revenue-header" style={{ flexWrap: 'wrap', gap: '20px' }}>
+                  <div>
+                    <div className="revenue-value" style={{ fontSize: '3.5rem', fontWeight: 900, color: 'var(--current-primary)', lineHeight: 1 }}>₹{homeData.revenue.toFixed(2)}</div>
+                    <div style={{ opacity: 0.5, fontWeight: 700, marginTop: '8px' }}>Total Sales from {homeData.todayCount} orders</div>
+                  </div>
+                  <div className="flex gap-8">
+                    <div className="text-center">
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{homeData.todayCount}</div>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>Orders</div>
+                    </div>
+                    <div className="text-center">
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>₹{homeData.avgOrderValue.toFixed(0)}</div>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>Avg Value</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }} className="stat-grid-2">
+                <div className="card" style={{ padding: '24px' }}>
+                  <h3 className="section-title">Avg. Prep Time</h3>
+                  <div className="flex items-center gap-4">
+                    <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '1.5rem' }}>⏱️</div>
+                    <div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>{stallProfile.min_pickup_time}m</div>
+                      <div style={{ fontSize: '0.85rem', opacity: 0.6 }}>Current Target</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card" style={{ padding: '24px' }}>
+                  <h3 className="section-title">Customer Satisfaction</h3>
+                  <div className="flex items-center gap-4">
+                    <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'rgba(255, 217, 61, 0.1)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '1.5rem' }}>⭐</div>
+                    <div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>{homeData.avgRating.toFixed(1)}</div>
+                      <div style={{ fontSize: '0.85rem', opacity: 0.6 }}>From {homeData.totalReviews} reviews</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card flex-col" style={{ padding: '24px' }}>
+              <h3 className="section-title">Popular Today</h3>
+              <div className="flex-col gap-3" style={{ flex: 1 }}>
+                {homeData.popularItems.length === 0 ? (
+                  <div style={{ opacity: 0.5, textAlign: 'center', padding: '40px' }}>No items sold today yet.</div>
+                ) : (
+                  homeData.popularItems.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center" style={{ padding: '12px 16px', background: 'rgba(128,128,128,0.05)', borderRadius: '16px' }}>
+                      <div className="flex items-center gap-4">
+                        <span style={{ fontWeight: 900, color: 'var(--current-primary)', fontSize: '1.1rem' }}>#{idx + 1}</span>
+                        <span style={{ fontWeight: 700 }}>{item.name}</span>
+                      </div>
+                      <span className="badge" style={{ background: 'rgba(255, 107, 107, 0.1)', color: 'var(--current-primary)' }}>{item.qty} sold</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              <button className="ghost" style={{ marginTop: '20px', width: '100%' }} onClick={() => setView('menu')}>Manage Menu</button>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }} className="mobile-column">
+            <div className="card flex-col" style={{ padding: '24px' }}>
+              <div className="flex justify-between items-center" style={{ marginBottom: '20px' }}>
+                <h3 className="section-title" style={{ margin: 0 }}>Recent Activities</h3>
+                <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>Live Feed</span>
+              </div>
+              <div className="flex-col">
+                {homeData.recentFeed.map((item, idx) => (
+                  <div key={idx} className="feed-item">
+                    <div style={{ 
+                      width: '10px', 
+                      height: '10px', 
+                      borderRadius: '50%', 
+                      background: item.type === 'NEW' ? '#6366F1' : (item.type === 'COMPLETED' ? '#10B981' : '#F59E0B') 
+                    }}></div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{item.message}</div>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>{new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="card flex-col" style={{ padding: '24px' }}>
+              <h3 className="section-title">Latest Review</h3>
+              {homeData.recentReview ? (
+                <div className="flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} style={{ color: i < homeData.recentReview.rating ? '#FFD93D' : '#E5E7EB' }}>★</span>
+                      ))}
+                    </div>
+                    <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{new Date(homeData.recentReview.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '1.1rem', fontStyle: 'italic', opacity: 0.9 }}>"{homeData.recentReview.comment}"</p>
+                  <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                    <button className="ghost" style={{ width: '100%' }} onClick={() => setView('analytics')}>View All Reviews</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ opacity: 0.5, textAlign: 'center', padding: '40px' }}>No reviews yet.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {view === 'orders' && (
         <div className="animated-list">
@@ -307,14 +713,15 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                   'Cooked': '✅',
                   'Ready to Eat': '🎉'
                 };
+                const isDelayed = new Date(order.pickup_time) < new Date() && order.status !== 'Ready to Eat';
                 return (
-                  <div key={order.id} className="order-card stall-order-card" onClick={() => setSelectedOrder(order)}>
+                  <div key={order.id} className={`order-card stall-order-card ${isDelayed ? 'urgent' : ''}`} onClick={() => setSelectedOrder(order)}>
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="order-card-id">#{order.id.slice(0, 5).toUpperCase()}</h3>
                         <div className="order-customer-name">👤 {order.customer_name}</div>
                       </div>
-                      <span className="badge" style={{ fontSize: '0.85rem' }}>
+                      <span className="badge" style={{ fontSize: '0.85rem', background: isDelayed ? '#EF4444' : '' }}>
                         ⏰ {new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -777,3 +1184,4 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     </DashboardLayout>
   );
 }
+

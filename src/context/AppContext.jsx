@@ -198,15 +198,17 @@ export const AppProvider = ({ children }) => {
       const liveInterval = setInterval(async () => {
         if (API_URL) {
           try {
-            const [ordRes, revRes] = await Promise.all([
+            const [profRes, ordRes, revRes] = await Promise.all([
+              fetch(`${API_URL}/profiles`),
               fetch(`${API_URL}/orders`),
               fetch(`${API_URL}/reviews`)
             ]);
-            if (ordRes.ok && revRes.ok) {
+            if (profRes.ok && ordRes.ok && revRes.ok) {
+              const profiles = await profRes.json();
               const orders = await ordRes.json();
               const reviews = await revRes.json();
               setDbData(prev => {
-                const updated = { ...prev, orders, reviews };
+                const updated = { ...prev, profiles, orders, reviews };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
                 return updated;
               });

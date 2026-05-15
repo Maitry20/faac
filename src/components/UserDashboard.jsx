@@ -179,6 +179,10 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   }, [db, session.id, selectedStall, searchQuery, selectedCategory, selectedFoodCourt, exitingOrders]);
 
   const openStallMenu = (stall) => {
+    if (stall.status === 'Closed') {
+      showToast(`${stall.stall_name} is currently Closed 🛑`, "error");
+      return;
+    }
     setSelectedStall(stall);
     setMenu(db.menuItems.filter(m => m.stall_id === stall.id && m.available));
     setView('menu');
@@ -215,6 +219,12 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   };
 
   const addToCart = (item) => {
+    const stall = db.profiles.find(p => p.id === selectedStall?.id);
+    if (stall?.status === 'Closed') {
+      showToast("This stall is now closed 🛑", "error");
+      return;
+    }
+
     if (groupTray) {
       const currentMember = groupTray.members.find(m => m.id === selectedMemberId);
       if (!currentMember) return;
@@ -255,6 +265,12 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   };
 
   const handlePlaceOrder = () => {
+    const stall = db.profiles.find(p => p.id === selectedStall?.id);
+    if (stall?.status === 'Closed') {
+      showToast("This stall is now closed. Order cannot be placed. 🛑", "error");
+      return;
+    }
+
     if (!pickupTime) {
       showToast("Please select a pickup time! ⏰", "error");
       return;
@@ -405,6 +421,9 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
                     <div className="stall-card-content">
                       <div className="flex justify-between items-start stall-card-header">
                         <h3 style={{ margin: '0 0 2px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
+                        <span className={`status-pill ${stall.status?.toLowerCase() || 'open'}`}>
+                          {stall.status || 'Open'}
+                        </span>
                       </div>
                       <div className="flex justify-between items-end stall-card-badges" style={{ marginTop: '4px', flexWrap: 'wrap', gap: '6px' }}>
                         <div className="flex-col">
@@ -480,7 +499,12 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
             </div>
           )}
 
-          <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>{selectedStall.stall_name} Menu</h2>
+          <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>{selectedStall.stall_name} Menu</h2>
+          {db.profiles.find(p => p.id === selectedStall.id)?.status === 'Closed' && (
+            <div className="delayed-alert" style={{ marginBottom: '24px', background: '#FEF2F2', borderColor: '#EF4444', color: '#B91C1C' }}>
+              <span>🛑 This stall just closed. You won't be able to place new orders.</span>
+            </div>
+          )}
           
           {menu.length === 0 ? (
             <div className="empty-state card"><h2>Menu is empty 😴</h2></div>
