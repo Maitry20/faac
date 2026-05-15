@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import DashboardLayout from './DashboardLayout';
-import { STATUSES } from './StatusStepper';
+import StatusStepper, { STATUSES } from './StatusStepper';
 
 const generateUUID = () => {
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -301,34 +301,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                       </div>
                     )}
 
-                    <div className="status-badge-preview">
-                      <span style={{ fontSize: '1.4rem' }}>
-                        {order.status === 'Order Received' ? '📥' : order.status === 'Cooking' ? '👨‍🍳' : order.status === 'Cooked' ? '✅' : '🎉'}
-                      </span>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', fontWeight: 800 }}>Current Status</span>
-                        <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--current-primary)' }}>{order.status}</span>
-                      </div>
-                      <span style={{ marginLeft: 'auto', fontSize: '0.8rem', opacity: 0.5 }}>Hover to expand 👇</span>
-                    </div>
-
-                    <div className="stepper-wrapper">
-                      <div className="section-title" style={{ marginBottom: 0 }}>Progress Tracker</div>
-                      <div className="order-card-stepper-container">
-                        <div className="stepper" style={{ margin: '16px 0 24px 0', padding: 0 }}>
-                          <div className="step-line-progress" style={{ width: `${(STATUSES.indexOf(order.status) / (STATUSES.length - 1)) * 100}%` }}></div>
-                          {STATUSES.map((st, idx) => {
-                            const isCompleted = idx <= STATUSES.indexOf(order.status);
-                            const isActive = st === order.status;
-                            return (
-                              <div key={st} className={`step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`} style={{ width: 24, height: 24 }}>
-                                <span style={{ fontSize: '0.7rem' }}>{idx + 1}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
+                    <StatusStepper currentStatus={order.status} />
 
                     <div className="order-card-actions">
                       {order.status !== 'Ready to Eat' ? (
