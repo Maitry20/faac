@@ -218,8 +218,66 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     { label: 'Settings', icon: '⚙️', active: view === 'settings', onClick: () => setView('settings') }
   ];
 
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
   return (
     <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="🏪 Stall Vendor" onToggleTheme={onToggleTheme} theme={theme}>
+      <style>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2000;
+          padding: 20px;
+          animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+          background: var(--current-card);
+          width: 100%;
+          max-width: 550px;
+          border-radius: 32px;
+          padding: 32px;
+          box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+          position: relative;
+          animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .status-badge-compact {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          background: rgba(128,128,128,0.06);
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 0.85rem;
+          margin-top: 12px;
+        }
+        .order-card.stall-order-card {
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .order-card.stall-order-card:hover {
+          transform: translateY(-5px);
+          border-color: var(--current-primary);
+          box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        button.primary {
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        button.primary:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 28px rgba(255, 107, 107, 0.3);
+        }
+      `}</style>
+
       {view === 'orders' && (
         <div className="animated-list">
           <div className="flex justify-between items-center" style={{ marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -243,83 +301,57 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
           ) : (
             <div className="grid-cards orders-grid">
               {filteredOrders.map(order => {
-                const nextStatuses = {
-                  'Order Received': { label: 'Start Cooking 👨‍🍳', class: 'primary' },
-                  'Cooking': { label: 'Mark Cooked ✅', class: 'accent' },
-                  'Cooked': { label: 'Ready to Eat 🎉', class: 'primary' },
-                  'Ready to Eat': { label: 'Waiting for Pickup 🛍️', class: 'ghost' }
+                const statusIcons = {
+                  'Order Received': '📥',
+                  'Cooking': '👨‍🍳',
+                  'Cooked': '✅',
+                  'Ready to Eat': '🎉'
                 };
-                const nextAct = nextStatuses[order.status];
-
                 return (
-                  <div key={order.id} className="order-card stall-order-card">
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="order-card-id">#{order.id.slice(0, 5).toUpperCase()}</h3>
-                          <div className="order-customer-name">👤 {order.customer_name}</div>
-                        </div>
-                        <span className="badge" style={{ fontSize: '0.9rem', padding: '6px 12px' }}>
-                          ⏰ {new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                  <div key={order.id} className="order-card stall-order-card" onClick={() => setSelectedOrder(order)}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="order-card-id">#{order.id.slice(0, 5).toUpperCase()}</h3>
+                        <div className="order-customer-name">👤 {order.customer_name}</div>
                       </div>
+                      <span className="badge" style={{ fontSize: '0.85rem' }}>
+                        ⏰ {new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
 
-                    <div className="order-card-divider"></div>
+                    <div className="status-badge-compact">
+                      <span>{statusIcons[order.status] || '⚡'}</span>
+                      <span style={{ color: order.status === 'Ready to Eat' ? '#10B981' : 'inherit' }}>
+                        {order.status}
+                      </span>
+                    </div>
 
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div className="section-title">Order Items</div>
-                      <ul className="receipt-list">
-                        {order.items.map((it, idx) => (
-                          <li key={idx} className="receipt-item">
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'rgba(0,0,0,0.4)', letterSpacing: '0.5px', marginBottom: '12px' }}>ORDER ITEMS</div>
+                      <ul className="receipt-list" style={{ gap: '10px' }}>
+                        {order.items.slice(0, 3).map((it, idx) => (
+                          <li key={idx} className="receipt-item" style={{ marginBottom: '8px' }}>
                             <div className="flex items-center gap-3">
-                              <span className="receipt-item-qty">{it.qty}x</span>
-                              {it.photo ? (
-                                <img src={it.photo} alt={it.name} className="receipt-item-img" />
-                              ) : (
-                                <span style={{ fontSize: '1.2rem' }}>{it.emoji}</span>
-                              )}
-                              <span className="receipt-item-name">{it.name}</span>
+                              <span className="receipt-item-qty" style={{ fontSize: '0.8rem', padding: '2px 6px' }}>{it.qty}x</span>
+                              <span style={{ fontSize: '1.2rem' }}>{it.emoji || '🍲'}</span>
+                              <span className="receipt-item-name" style={{ fontSize: '0.9rem', fontWeight: '700' }}>{it.name}</span>
                             </div>
-                            <span className="receipt-item-price">₹{(it.price * it.qty).toFixed(2)}</span>
+                            <span className="receipt-item-price" style={{ fontSize: '0.85rem', opacity: 0.6 }}>₹{(it.price * it.qty).toFixed(2)}</span>
                           </li>
                         ))}
+                        {order.items.length > 3 && (
+                          <div style={{ fontSize: '0.8rem', opacity: 0.5, fontStyle: 'italic', marginTop: '4px' }}>
+                            + {order.items.length - 3} more items...
+                          </div>
+                        )}
                       </ul>
                     </div>
 
-                    {order.special_instructions && (
-                      <div style={{ 
-                        background: 'rgba(255, 107, 107, 0.08)', 
-                        padding: '12px 16px', 
-                        borderRadius: '16px', 
-                        border: '1px solid rgba(255, 107, 107, 0.2)',
-                        fontSize: '0.9rem', 
-                        fontWeight: '700',
-                        color: 'var(--current-primary)'
-                      }}>
-                        {/allergy|allergic/i.test(order.special_instructions) ? '⚠️ Allergy Alert: ' : '📝 Notes: '}"{order.special_instructions}"
-                      </div>
-                    )}
-
-                    <StatusStepper currentStatus={order.status} />
-
-                    <div className="order-card-actions">
-                      {order.status !== 'Ready to Eat' ? (
-                        <button 
-                          className={`action-btn ${nextAct?.class || 'primary'}`}
-                          onClick={(e) => { e.stopPropagation(); updateStatus(order.id, order.status); }}
-                        >
-                          {nextAct?.label || 'Next Step'}
-                        </button>
-                      ) : (
-                        <div className="order-completed-badge">
-                          🎉 Ready & Waiting for Foodie
-                        </div>
-                      )}
-                      <div className="order-card-footer">
-                        <span>Ordered at {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <span style={{ fontWeight: 900, color: 'var(--current-primary)', fontSize: '1.1rem' }}>₹{Number(order.total).toFixed(2)}</span>
-                      </div>
+                    <div className="order-card-divider" style={{ margin: '16px 0' }}></div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span style={{ opacity: 0.5, fontSize: '0.8rem' }}>Total Amount</span>
+                      <span style={{ fontWeight: 900, color: 'var(--current-primary)', fontSize: '1.1rem' }}>₹{Number(order.total).toFixed(2)}</span>
                     </div>
                   </div>
                 );
@@ -328,6 +360,118 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
           )}
         </div>
       )}
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button 
+              className="ghost" 
+              onClick={() => setSelectedOrder(null)}
+              style={{ position: 'absolute', top: '24px', right: '24px', padding: '8px', width: '40px', height: '40px', borderRadius: '50%' }}
+            >
+              ✕
+            </button>
+
+            <div style={{ marginBottom: '24px' }}>
+              <div className="flex items-center gap-2" style={{ marginBottom: '4px' }}>
+                <span className="badge">Order Detail</span>
+                <span style={{ opacity: 0.5 }}>#{selectedOrder.id.slice(0, 8).toUpperCase()}</span>
+              </div>
+              <h2 style={{ fontSize: '2.2rem', margin: 0 }}>{selectedOrder.customer_name}</h2>
+              <div style={{ opacity: 0.6 }}>Expected pickup at {new Date(selectedOrder.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+
+            <div className="order-card-divider"></div>
+
+            <div style={{ maxHeight: '300px', overflowY: 'auto', margin: '24px 0', paddingRight: '10px' }} className="hide-scrollbar">
+              <h3 className="section-title">Order Items</h3>
+              <ul className="receipt-list">
+                {selectedOrder.items.map((it, idx) => (
+                  <li key={idx} className="receipt-item">
+                    <div className="flex items-center gap-3">
+                      <span className="receipt-item-qty">{it.qty}x</span>
+                      {it.photo ? (
+                        <img src={it.photo} alt={it.name} className="receipt-item-img" />
+                      ) : (
+                        <span style={{ fontSize: '1.2rem' }}>{it.emoji}</span>
+                      )}
+                      <span className="receipt-item-name">{it.name}</span>
+                    </div>
+                    <span className="receipt-item-price">₹{(it.price * it.qty).toFixed(2)}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {selectedOrder.special_instructions && (
+                <div style={{ 
+                  background: 'rgba(255, 107, 107, 0.08)', 
+                  padding: '16px', 
+                  borderRadius: '16px', 
+                  border: '1px solid rgba(255, 107, 107, 0.2)',
+                  marginTop: '20px',
+                  fontWeight: '700',
+                  color: 'var(--current-primary)'
+                }}>
+                  📝 Notes: "{selectedOrder.special_instructions}"
+                </div>
+              )}
+            </div>
+
+            <div className="order-card-divider"></div>
+
+            <div style={{ marginTop: '24px' }}>
+              <StatusStepper 
+                currentStatus={selectedOrder.status} 
+                onStatusClick={(newStatus) => {
+                  db.updateOrderStatus(selectedOrder.id, newStatus);
+                  setSelectedOrder({...selectedOrder, status: newStatus});
+                  showToast(`Order status jumped to: ${newStatus} ✨`);
+                }}
+              />
+              
+              <div className="flex gap-4" style={{ marginTop: '32px' }}>
+                {selectedOrder.status !== 'Ready to Eat' ? (
+                  <button 
+                    className="primary" 
+                    style={{ flex: 1, padding: '18px' }}
+                    onClick={() => {
+                      updateStatus(selectedOrder.id, selectedOrder.status);
+                      // Update local state to reflect change immediately in modal
+                      const nextIdx = STATUSES.indexOf(selectedOrder.status) + 1;
+                      if (nextIdx < STATUSES.length) {
+                        setSelectedOrder({...selectedOrder, status: STATUSES[nextIdx]});
+                      }
+                    }}
+                  >
+                    {(() => {
+                      const labels = {
+                        'Order Received': 'Start Cooking 👨‍🍳',
+                        'Cooking': 'Mark as Cooked ✅',
+                        'Cooked': 'Ready for Pickup 🎉'
+                      };
+                      return labels[selectedOrder.status] || 'Next Step';
+                    })()}
+                  </button>
+                ) : (
+                  <div style={{ 
+                    flex: 1, 
+                    textAlign: 'center', 
+                    padding: '16px', 
+                    background: '#10B981', 
+                    color: 'white', 
+                    borderRadius: '16px',
+                    fontWeight: '800'
+                  }}>
+                    ✅ Order Ready for Pickup
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {view === 'history' && (
         <div className="animated-list">

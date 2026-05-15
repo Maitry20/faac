@@ -404,16 +404,16 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
                     </div>
                     <div className="stall-card-content">
                       <div className="flex justify-between items-center stall-card-header">
-                        <h3 style={{ margin: '0 0 4px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
-                        {stall.rating && <span style={{ fontWeight: 'bold' }}>⭐ {stall.rating.toFixed(1)} ({stall.reviewCount})</span>}
+                        <h3 style={{ margin: '0 0 2px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
+                        {stall.rating && <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>⭐ {stall.rating.toFixed(1)}</span>}
                       </div>
-                      <div className="flex justify-between items-center stall-card-badges" style={{ marginTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                        <span className="badge">⏱️ Est. Wait: {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
+                      <div className="flex justify-between items-center stall-card-badges" style={{ marginTop: '4px', flexWrap: 'wrap', gap: '6px' }}>
+                        <span className="badge">⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
                         <span className="badge" style={{ background: 'var(--current-primary)', opacity: 0.9, color: '#fff' }}>
-                          📍 {stall.food_court || 'North Food Court'}
+                          📍 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'FC'}
                         </span>
                       </div>
-                      {stall.categories && <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '8px' }}>{stall.categories.join(' • ')}</div>}
+                      {stall.categories && <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '4px' }}>{stall.categories.join(' • ')}</div>}
                     </div>
                   </div>
                 </div>
