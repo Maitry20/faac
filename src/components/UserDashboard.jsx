@@ -371,30 +371,36 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
               </div>
             ) : (
               stalls.map(stall => (
-                <div key={stall.id} className="card shimmer" style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openStallMenu(stall)}>
+                <div key={stall.id} className="card shimmer stall-card" style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openStallMenu(stall)}>
                   <button 
-                    className="ghost" 
+                    className="ghost heart-btn" 
                     style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.9)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}
                   >
                     {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
                   </button>
-                  {stall.banner_url ? (
-                    <img src={stall.banner_url} alt="Banner" className="banner-img" />
-                  ) : (
-                    <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2, fontSize: '3rem' }}>🏪</div>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <h3 style={{ margin: '0 0 4px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
-                    {stall.rating && <span style={{ fontWeight: 'bold' }}>⭐ {stall.rating.toFixed(1)} ({stall.reviewCount})</span>}
+                  <div className="stall-card-inner">
+                    <div className="stall-card-img-wrapper">
+                      {stall.banner_url ? (
+                        <img src={stall.banner_url} alt="Banner" className="banner-img" />
+                      ) : (
+                        <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2, fontSize: '3rem' }}>🏪</div>
+                      )}
+                    </div>
+                    <div className="stall-card-content">
+                      <div className="flex justify-between items-center stall-card-header">
+                        <h3 style={{ margin: '0 0 4px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
+                        {stall.rating && <span style={{ fontWeight: 'bold' }}>⭐ {stall.rating.toFixed(1)} ({stall.reviewCount})</span>}
+                      </div>
+                      <div className="flex justify-between items-center stall-card-badges" style={{ marginTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                        <span className="badge">⏱️ Est. Wait: {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
+                        <span className="badge" style={{ background: 'var(--current-primary)', opacity: 0.9, color: '#fff' }}>
+                          📍 {stall.food_court || 'North Food Court'}
+                        </span>
+                      </div>
+                      {stall.categories && <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '8px' }}>{stall.categories.join(' • ')}</div>}
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center" style={{ marginTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                    <span className="badge">⏱️ Est. Wait: {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
-                    <span className="badge" style={{ background: 'var(--current-primary)', opacity: 0.9, color: '#fff' }}>
-                      📍 {stall.food_court || 'North Food Court'}
-                    </span>
-                  </div>
-                  {stall.categories && <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '8px' }}>{stall.categories.join(' • ')}</div>}
                 </div>
               ))
             )}
