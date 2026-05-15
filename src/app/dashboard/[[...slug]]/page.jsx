@@ -3,16 +3,16 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../../context/AppContext';
 
 // Lazy load dashboards to drastically reduce initial bundle size!
-const UserDashboard = dynamic(() => import('../../components/UserDashboard'), {
+const UserDashboard = dynamic(() => import('../../../components/UserDashboard'), {
   loading: () => <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner">🍴</div></div>,
 });
-const StallDashboard = dynamic(() => import('../../components/StallDashboard'), {
+const StallDashboard = dynamic(() => import('../../../components/StallDashboard'), {
   loading: () => <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner">🍴</div></div>,
 });
-const AdminDashboard = dynamic(() => import('../../components/AdminDashboard'), {
+const AdminDashboard = dynamic(() => import('../../../components/AdminDashboard'), {
   loading: () => <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner">🍴</div></div>,
 });
 

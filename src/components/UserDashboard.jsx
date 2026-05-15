@@ -22,17 +22,19 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   const [profile, setProfile] = useState({ name: '', email: '' });
   const [view, setView] = useState(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('tab') || 'home';
+      const parts = window.location.pathname.split('/');
+      const slug = parts[parts.length - 1];
+      return ['orders', 'history', 'stats', 'profile', 'menu'].includes(slug) ? slug : 'home';
     }
     return 'home';
   }); // home (stalls), menu, orders, history, stats, profile
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location);
-      url.searchParams.set('tab', view);
-      window.history.replaceState({}, '', url);
+      const newPath = view === 'home' ? '/dashboard' : `/dashboard/${view}`;
+      if (window.location.pathname !== newPath) {
+        window.history.replaceState({}, '', newPath + window.location.search);
+      }
     }
   }, [view]);
   const [myOrders, setMyOrders] = useState([]);

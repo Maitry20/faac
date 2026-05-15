@@ -51,17 +51,19 @@ const detectEmoji = (text) => {
 export default function StallDashboard({ db, session, showToast, onLogout, onToggleTheme, theme }) {
   const [view, setView] = useState(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('tab') || 'orders';
+      const parts = window.location.pathname.split('/');
+      const slug = parts[parts.length - 1];
+      return ['orders', 'history', 'menu', 'analytics', 'settings'].includes(slug) ? slug : 'orders';
     }
     return 'orders';
   }); // orders, history, menu, analytics, settings
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location);
-      url.searchParams.set('tab', view);
-      window.history.replaceState({}, '', url);
+      const newPath = view === 'orders' ? '/dashboard' : `/dashboard/${view}`;
+      if (window.location.pathname !== newPath) {
+        window.history.replaceState({}, '', newPath + window.location.search);
+      }
     }
   }, [view]);
   const [orders, setOrders] = useState([]);

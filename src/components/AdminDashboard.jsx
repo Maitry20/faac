@@ -8,17 +8,19 @@ export default function AdminDashboard({ db, onLogout, showToast, onToggleTheme,
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('tab') || 'overview';
+      const parts = window.location.pathname.split('/');
+      const slug = parts[parts.length - 1];
+      return ['overview', 'stalls', 'orders'].includes(slug) ? slug : 'overview';
     }
     return 'overview';
   }); // overview, stalls, orders
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location);
-      url.searchParams.set('tab', activeTab);
-      window.history.replaceState({}, '', url);
+      const newPath = activeTab === 'overview' ? '/dashboard' : `/dashboard/${activeTab}`;
+      if (window.location.pathname !== newPath) {
+        window.history.replaceState({}, '', newPath + window.location.search);
+      }
     }
   }, [activeTab]);
   const [searchQuery, setSearchQuery] = useState('');
