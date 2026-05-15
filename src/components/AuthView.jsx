@@ -69,12 +69,19 @@ export default function AuthView({ role, onBack, db, showToast, handleAdminLogin
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Mobile header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}>
-        <button onClick={onBack} style={{ background: 'transparent', padding: '4px 0', fontSize: '1rem' }}>⬅️ Back</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px' }}>
+        <button className="back-btn" onClick={onBack} style={{ margin: 0 }}>
+          <div className="arrow-circle">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 12H5M5 12L12 19M5 12L12 5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          Back
+        </button>
         <button
           className="theme-toggle card"
           onClick={onToggleTheme}
-          style={{ position: 'static', width: 40, height: 40, fontSize: '1rem', boxShadow: 'none' }}
+          style={{ position: 'static', width: 48, height: 48, fontSize: '1.2rem', boxShadow: 'none', borderRadius: '50%' }}
         >
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
@@ -87,12 +94,7 @@ export default function AuthView({ role, onBack, db, showToast, handleAdminLogin
             {role === 'admin' ? 'Secret Admin Door 🕵️‍♂️' : role === 'stall' ? 'Stall Portal 🏪' : 'Foodie Login 😋'}
           </h2>
 
-          {isLogin && (
-            <div style={{ background: 'rgba(128,128,128,0.1)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '0.85rem' }}>
-              <strong>Demo Accounts:</strong><br/>
-              {role === 'admin' ? 'FAAC / FAAC' : role === 'stall' ? 'burger@stall.com / password' : 'foodie@test.com / password'}
-            </div>
-          )}
+
           
           <form onSubmit={handleSubmit} className="flex-col">
             <input 

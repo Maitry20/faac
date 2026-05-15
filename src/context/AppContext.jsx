@@ -74,7 +74,12 @@ export const AppProvider = ({ children }) => {
   });
 
   const [toasts, setToasts] = useState([]);
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('faac_theme') || 'light';
+    }
+    return 'light';
+  });
 
   const setSession = useCallback((sess) => {
     setSessionState(sess);
@@ -107,9 +112,7 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('faac_theme') || 'light';
-      setTheme(savedTheme);
-      document.body.className = savedTheme;
+      document.body.className = theme;
 
       // Verify JWT token if session exists
       const token = localStorage.getItem('faac_jwt_token');

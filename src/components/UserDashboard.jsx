@@ -403,17 +403,25 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
                       )}
                     </div>
                     <div className="stall-card-content">
-                      <div className="flex justify-between items-center stall-card-header">
+                      <div className="flex justify-between items-start stall-card-header">
                         <h3 style={{ margin: '0 0 2px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
-                        {stall.rating && <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>⭐ {stall.rating.toFixed(1)}</span>}
                       </div>
-                      <div className="flex justify-between items-center stall-card-badges" style={{ marginTop: '4px', flexWrap: 'wrap', gap: '6px' }}>
-                        <span className="badge">⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
-                        <span className="badge" style={{ background: 'var(--current-primary)', opacity: 0.9, color: '#fff' }}>
-                          📍 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'FC'}
-                        </span>
+                      <div className="flex justify-between items-end stall-card-badges" style={{ marginTop: '4px', flexWrap: 'wrap', gap: '6px' }}>
+                        <div className="flex-col">
+                          <span className="badge" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
+                          {stall.categories && <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px' }}>{stall.categories.join(' • ')}</div>}
+                        </div>
+                        <div className="flex-col items-end">
+                          <span className="badge" style={{ background: 'var(--current-primary)', opacity: 0.9, color: '#fff', fontSize: '0.7rem', padding: '3px 8px' }}>
+                            📍 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'FC'}
+                          </span>
+                          {stall.rating && (
+                            <div style={{ fontWeight: 'bold', fontSize: '0.7rem', marginTop: '2px', color: 'var(--current-primary)' }}>
+                              ⭐ {stall.rating.toFixed(1)}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      {stall.categories && <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '4px' }}>{stall.categories.join(' • ')}</div>}
                     </div>
                   </div>
                 </div>

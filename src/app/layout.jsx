@@ -12,8 +12,16 @@ export default function RootLayout({ children }) {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              const theme = localStorage.getItem('faac_theme') || 'light';
+              document.body.className = theme;
+            } catch (e) {}
+          })()
+        ` }} />
       </head>
-      <body suppressHydrationWarning>
+      <body suppressHydrationWarning className="light">
         <AppProvider>
           {children}
         </AppProvider>

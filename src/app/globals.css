@@ -16,6 +16,16 @@
   --accent-dark: #FFD93D;
   --card-dark: #16213E;
   --text-dark: #E0E0E0;
+
+  /* Default theme variables (Light Theme) */
+  --current-card: var(--card-light);
+  --current-primary: var(--primary-light);
+  --current-accent: var(--accent-light);
+  --current-bg: var(--bg-light);
+  --current-text: var(--text-light);
+  --current-active-bg: #FFEAD2;
+  --current-active-color: var(--current-primary);
+  --topbar-bg: rgba(255, 248, 240, 0.82);
 }
 
 body {
@@ -24,27 +34,16 @@ body {
   transition: background-color 0.3s, color 0.3s;
   min-height: 100vh;
   overflow-x: hidden;
-}
-
-body.light {
-  background-color: var(--bg-light);
-  color: var(--text-light);
-  --current-card: var(--card-light);
-  --current-primary: var(--primary-light);
-  --current-accent: var(--accent-light);
-  --current-bg: var(--bg-light);
-  --current-active-bg: #FFEAD2;
-  --current-active-color: var(--current-primary);
-  --topbar-bg: rgba(255, 248, 240, 0.82);
+  background-color: var(--current-bg);
+  color: var(--current-text);
 }
 
 body.dark {
-  background-color: var(--bg-dark);
-  color: var(--text-dark);
   --current-card: var(--card-dark);
   --current-primary: var(--primary-dark);
   --current-accent: var(--accent-dark);
   --current-bg: var(--bg-dark);
+  --current-text: var(--text-dark);
   --current-active-bg: #35261F;
   --current-active-color: #FFA4A4;
   --topbar-bg: rgba(26, 26, 46, 0.82);
@@ -1385,4 +1384,72 @@ textarea:focus {
   .receipt-list>li:nth-child(n+3) {
     display: flex !important;
   }
+}
+
+/* Back Button Styles - Pill Design */
+.back-btn {
+  background: var(--current-card);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 24px 8px 8px; /* Extra right padding for pill shape */
+  font-weight: 800;
+  color: var(--current-text);
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 20px;
+  cursor: pointer;
+  border-radius: 50px; /* Pill shape */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.back-btn:hover {
+  background: var(--current-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+}
+
+.arrow-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 107, 107, 0.1); /* Light red background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.back-btn:hover .arrow-circle {
+  background: white; /* White circle on hover */
+  transform: scale(0.9); /* Subtle scale down for inner circle on hover */
+}
+
+.arrow-circle svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--current-primary); /* Red arrow by default */
+  stroke-width: 2.5;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover .arrow-circle svg {
+  stroke: var(--current-primary); /* Keep red arrow on hover against white bg */
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.back-btn {
+  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
