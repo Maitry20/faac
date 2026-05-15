@@ -88,7 +88,7 @@ export const AppProvider = ({ children }) => {
             const jwt = await new SignJWT({ id: sess.id, role: sess.role })
               .setProtectedHeader({ alg: 'HS256' })
               .setIssuedAt()
-              .setExpirationTime('2h')
+              .setExpirationTime('10m')
               .sign(secret);
             localStorage.setItem('faac_jwt_token', jwt);
           } catch (err) {
@@ -145,7 +145,7 @@ export const AppProvider = ({ children }) => {
       window.addEventListener('storage', handleStorage);
 
       // Load initial data from AWS
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         const loadAWSData = async () => {
           try {
             const [profRes, menuRes, ordRes, revRes] = await Promise.all([
@@ -258,7 +258,7 @@ export const AppProvider = ({ children }) => {
 
     addProfile: (p) => {
       saveDb(d => ({ ...d, profiles: [...d.profiles, p] }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/profiles`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).catch(console.error);
       }
     },
@@ -267,7 +267,7 @@ export const AppProvider = ({ children }) => {
       saveDb(d => ({
         ...d, profiles: d.profiles.map(p => p.id === id ? { ...p, ...updates } : p)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/profiles`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }).catch(console.error);
       }
     },
@@ -279,7 +279,7 @@ export const AppProvider = ({ children }) => {
         menuItems: d.menuItems.filter(m => m.stall_id !== id),
         orders: d.orders.filter(o => o.stall_id !== id)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/profiles`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(console.error);
         const menuToDelete = dbData.menuItems.filter(m => m.stall_id === id);
         const ordersToDelete = dbData.orders.filter(o => o.stall_id === id);
@@ -292,7 +292,7 @@ export const AppProvider = ({ children }) => {
 
     addMenuItem: (m) => {
       saveDb(d => ({ ...d, menuItems: [...d.menuItems, m] }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/menuItems`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(m) }).catch(console.error);
       }
     },
@@ -303,7 +303,7 @@ export const AppProvider = ({ children }) => {
       saveDb(d => ({
         ...d, menuItems: d.menuItems.map(m => m.id === id ? { ...m, available: !m.available } : m)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe') && item) {
+      if (API_URL && item) {
         fetch(`${API_URL}/menuItems`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, available: newStatus }) }).catch(console.error);
       }
     },
@@ -312,14 +312,14 @@ export const AppProvider = ({ children }) => {
       saveDb(d => ({
         ...d, menuItems: d.menuItems.filter(m => m.id !== id)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/menuItems`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(console.error);
       }
     },
 
     addOrder: (o) => {
       saveDb(d => ({ ...d, orders: [...d.orders, o] }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) }).catch(console.error);
       }
     },
@@ -328,7 +328,7 @@ export const AppProvider = ({ children }) => {
       saveDb(d => ({
         ...d, orders: d.orders.map(o => o.id === id ? { ...o, status } : o)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/orders`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) }).catch(console.error);
       }
     },
@@ -337,7 +337,7 @@ export const AppProvider = ({ children }) => {
       saveDb(d => ({
         ...d, orders: d.orders.filter(o => o.id !== id)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/orders`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(console.error);
       }
     },
@@ -348,14 +348,14 @@ export const AppProvider = ({ children }) => {
       saveDb(d => ({
         ...d, profiles: d.profiles.map(p => p.id === id ? { ...p, is_approved: !p.is_approved } : p)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe') && stall) {
+      if (API_URL && stall) {
         fetch(`${API_URL}/profiles`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_approved: newApproval }) }).catch(console.error);
       }
     },
 
     addReview: (r) => {
       saveDb(d => ({ ...d, reviews: [...(d.reviews || []), r] }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }).catch(console.error);
       }
     },
@@ -369,7 +369,7 @@ export const AppProvider = ({ children }) => {
         ...d,
         profiles: d.profiles.map(p => p.id === userId ? { ...p, favorite_stalls: updatedFavs } : p)
       }));
-      if (API_URL && !API_URL.includes('30evvscwbe')) {
+      if (API_URL) {
         fetch(`${API_URL}/profiles`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: userId, favorite_stalls: updatedFavs }) }).catch(console.error);
       }
     }
