@@ -28,7 +28,7 @@ const INITIAL_MOCK_DATA = {
 };
 
 const STORAGE_KEY = 'faac_db_data_v2';
-const API_URL = 'https://30evvscwbe.execute-api.us-east-1.amazonaws.com';
+const API_URL = 'https://3pdy6omb24.execute-api.eu-west-2.amazonaws.com';
 const JWT_SECRET_KEY = 'faac_super_secret_jwt_key_32_bytes_min';
 
 const playClickSound = () => {
