@@ -147,65 +147,83 @@ export const AppProvider = ({ children }) => {
       };
       window.addEventListener('storage', handleStorage);
 
-      // Load initial data from AWS
-      if (API_URL) {
-        const loadAWSData = async () => {
+      // Load initial data via AWS API
+      const loadData = async () => {
+        if (!API_URL) return;
+        try {
+          const [profRes, menuRes, ordRes, revRes] = await Promise.all([
+            fetch(`${API_URL}/profiles`),
+            fetch(`${API_URL}/menuItems`),
+            fetch(`${API_URL}/orders`),
+            fetch(`${API_URL}/reviews`)
+          ]);
+          if (profRes.ok && menuRes.ok && ordRes.ok && revRes.ok) {
+            const profiles = await profRes.json();
+            const menuItems = await menuRes.json();
+            const orders = await ordRes.json();
+            const reviews = await revRes.json();
+
+            const hasData = profiles.length > 0 || menuItems.length > 0;
+            if (!hasData) {
+              // Seed DynamoDB with INITIAL_MOCK_DATA if it's empty
+              await Promise.all([
+                ...INITIAL_MOCK_DATA.profiles.map(p => fetch(`${API_URL}/profiles`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })),
+                ...INITIAL_MOCK_DATA.menuItems.map(m => fetch(`${API_URL}/menuItems`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(m) })),
+                ...INITIAL_MOCK_DATA.orders.map(o => fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) })),
+                ...INITIAL_MOCK_DATA.reviews.map(r => fetch(`${API_URL}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }))
+              ]);
+              setDbData(INITIAL_MOCK_DATA);
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_MOCK_DATA));
+            } else {
+              const loadedData = {
+                profiles: profiles.length > 0 ? profiles : INITIAL_MOCK_DATA.profiles,
+                menuItems: menuItems.length > 0 ? menuItems : INITIAL_MOCK_DATA.menuItems,
+                orders,
+                reviews
+              };
+              setDbData(loadedData);
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedData));
+            }
+          }
+        } catch (err) {
+          console.warn('API fetch failed, using local storage/mock data:', err);
+        }
+      };
+      loadData();
+
+      // ── LIVE POLLING (Real-time Progress Tracker) ──────────────────────────
+      const liveInterval = setInterval(async () => {
+        if (API_URL) {
           try {
-            const [profRes, menuRes, ordRes, revRes] = await Promise.all([
-              fetch(`${API_URL}/profiles`),
-              fetch(`${API_URL}/menuItems`),
+            const [ordRes, revRes] = await Promise.all([
               fetch(`${API_URL}/orders`),
               fetch(`${API_URL}/reviews`)
             ]);
-            if (profRes.ok && menuRes.ok && ordRes.ok && revRes.ok) {
-              const profiles = await profRes.json();
-              const menuItems = await menuRes.json();
+            if (ordRes.ok && revRes.ok) {
               const orders = await ordRes.json();
               const reviews = await revRes.json();
-
-              const hasData = profiles.length > 0 || menuItems.length > 0 || orders.length > 0 || reviews.length > 0;
-              if (!hasData) {
-                // Seed AWS database with INITIAL_MOCK_DATA
-                await Promise.all([
-                  ...INITIAL_MOCK_DATA.profiles.map(p => fetch(`${API_URL}/profiles`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })),
-                  ...INITIAL_MOCK_DATA.menuItems.map(m => fetch(`${API_URL}/menuItems`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(m) })),
-                  ...INITIAL_MOCK_DATA.orders.map(o => fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) })),
-                  ...INITIAL_MOCK_DATA.reviews.map(r => fetch(`${API_URL}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }))
-                ]);
-                setDbData(INITIAL_MOCK_DATA);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_MOCK_DATA));
-              } else {
-                const loadedData = {
-                  profiles: profiles.length > 0 ? profiles : INITIAL_MOCK_DATA.profiles,
-                  menuItems: menuItems.length > 0 ? menuItems : INITIAL_MOCK_DATA.menuItems,
-                  orders: orders,
-                  reviews: reviews
-                };
-                setDbData(loadedData);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedData));
-              }
+              setDbData(prev => {
+                const updated = { ...prev, orders, reviews };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+                return updated;
+              });
             }
-          } catch (err) {
-            console.warn('AWS fetch failed, using local storage/mock data:', err);
-          }
-        };
-        loadAWSData();
-      }
+          } catch (err) {}
+        }
 
-      const interval = setInterval(() => {
+        // localStorage fallback for same-tab updates
         const current = localStorage.getItem(STORAGE_KEY);
         if (current) {
           try {
             setDbData(prev => {
               const prevStr = JSON.stringify(prev);
-              if (prevStr !== current) {
-                return JSON.parse(current);
-              }
+              if (prevStr !== current) return JSON.parse(current);
               return prev;
             });
-          } catch (err) { }
+          } catch (err) {}
         }
-      }, 2000);
+      }, 1500);
+
 
       const handleClick = () => {
         playClickSound();
@@ -215,7 +233,7 @@ export const AppProvider = ({ children }) => {
       return () => {
         window.removeEventListener('storage', handleStorage);
         window.removeEventListener('click', handleClick);
-        clearInterval(interval);
+        clearInterval(liveInterval);
       };
     }
   }, []);
