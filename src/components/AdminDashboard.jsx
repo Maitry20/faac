@@ -19,10 +19,24 @@ export default function AdminDashboard({ db, onLogout, showToast, onToggleTheme,
     if (typeof window !== 'undefined') {
       const newPath = activeTab === 'overview' ? '/dashboard' : `/dashboard/${activeTab}`;
       if (window.location.pathname !== newPath) {
-        window.history.replaceState({}, '', newPath + window.location.search);
+        window.history.pushState({ activeTab }, '', newPath + window.location.search);
       }
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (e.state && e.state.activeTab) {
+        setActiveTab(e.state.activeTab);
+      } else {
+        const parts = window.location.pathname.split('/');
+        const slug = parts[parts.length - 1];
+        setActiveTab(['overview', 'stalls', 'orders'].includes(slug) ? slug : 'overview');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {

@@ -20,8 +20,14 @@ export default function DashboardPage() {
   const router = useRouter();
   const { session, db, showToast, handleLogout, theme, handleToggleTheme } = useAppContext();
 
-  // Middlewares protects the route now, so we only need a brief fallback state before hydration
-  if (!session) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Show spinner while checking session or before hydration
+  if (!mounted || !session) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="spinner">🍴</div>

@@ -62,10 +62,24 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     if (typeof window !== 'undefined') {
       const newPath = view === 'orders' ? '/dashboard' : `/dashboard/${view}`;
       if (window.location.pathname !== newPath) {
-        window.history.replaceState({}, '', newPath + window.location.search);
+        window.history.pushState({ view }, '', newPath + window.location.search);
       }
     }
   }, [view]);
+
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (e.state && e.state.view) {
+        setView(e.state.view);
+      } else {
+        const parts = window.location.pathname.split('/');
+        const slug = parts[parts.length - 1];
+        setView(['orders', 'history', 'menu', 'analytics', 'settings'].includes(slug) ? slug : 'orders');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [orders, setOrders] = useState([]);
   const [historyOrders, setHistoryOrders] = useState([]);
   const [menu, setMenu] = useState([]);

@@ -67,7 +67,7 @@ export const AppProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('faac_session');
       if (saved) {
-        try { return JSON.parse(saved); } catch (e) {}
+        try { return JSON.parse(saved); } catch (e) { }
       }
     }
     return null;
@@ -138,11 +138,11 @@ export const AppProvider = ({ children }) => {
         if (e.key === STORAGE_KEY && e.newValue) {
           try {
             setDbData(JSON.parse(e.newValue));
-          } catch (err) {}
+          } catch (err) { }
         } else if (e.key === 'faac_session') {
           try {
             setSessionState(e.newValue ? JSON.parse(e.newValue) : null);
-          } catch (err) {}
+          } catch (err) { }
         }
       };
       window.addEventListener('storage', handleStorage);
@@ -203,7 +203,7 @@ export const AppProvider = ({ children }) => {
               }
               return prev;
             });
-          } catch (err) {}
+          } catch (err) { }
         }
       }, 2000);
 
@@ -277,7 +277,7 @@ export const AppProvider = ({ children }) => {
 
     deleteProfile: (id) => {
       saveDb(d => ({
-        ...d, 
+        ...d,
         profiles: d.profiles.filter(p => p.id !== id),
         menuItems: d.menuItems.filter(m => m.stall_id !== id),
         orders: d.orders.filter(o => o.stall_id !== id)

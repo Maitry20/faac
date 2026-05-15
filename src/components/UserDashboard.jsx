@@ -33,10 +33,25 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     if (typeof window !== 'undefined') {
       const newPath = view === 'home' ? '/dashboard' : `/dashboard/${view}`;
       if (window.location.pathname !== newPath) {
-        window.history.replaceState({}, '', newPath + window.location.search);
+        window.history.pushState({ view }, '', newPath + window.location.search);
       }
     }
   }, [view]);
+
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (e.state && e.state.view) {
+        setView(e.state.view);
+      } else {
+        // Fallback for dashboard home
+        const parts = window.location.pathname.split('/');
+        const slug = parts[parts.length - 1];
+        setView(['orders', 'history', 'stats', 'profile', 'menu'].includes(slug) ? slug : 'home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [myOrders, setMyOrders] = useState([]);
   const [myHistory, setMyHistory] = useState([]);
   const [exitingOrders, setExitingOrders] = useState(new Set());
