@@ -1,22 +1,26 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
-import UserDashboard from '../../components/UserDashboard';
-import StallDashboard from '../../components/StallDashboard';
-import AdminDashboard from '../../components/AdminDashboard';
+import dynamic from 'next/dynamic';
 import { useAppContext } from '../../context/AppContext';
+
+// Lazy load dashboards to drastically reduce initial bundle size!
+const UserDashboard = dynamic(() => import('../../components/UserDashboard'), {
+  loading: () => <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner">🍴</div></div>,
+});
+const StallDashboard = dynamic(() => import('../../components/StallDashboard'), {
+  loading: () => <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner">🍴</div></div>,
+});
+const AdminDashboard = dynamic(() => import('../../components/AdminDashboard'), {
+  loading: () => <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner">🍴</div></div>,
+});
 
 export default function DashboardPage() {
   const router = useRouter();
   const { session, db, showToast, handleLogout, theme, handleToggleTheme } = useAppContext();
 
-  useEffect(() => {
-    if (!session) {
-      router.push('/');
-    }
-  }, [session, router]);
-
+  // Middlewares protects the route now, so we only need a brief fallback state before hydration
   if (!session) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -20,7 +20,21 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [profile, setProfile] = useState({ name: '', email: '' });
-  const [view, setView] = useState('home'); // home (stalls), menu, orders, history, stats, profile
+  const [view, setView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('tab') || 'home';
+    }
+    return 'home';
+  }); // home (stalls), menu, orders, history, stats, profile
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      url.searchParams.set('tab', view);
+      window.history.replaceState({}, '', url);
+    }
+  }, [view]);
   const [myOrders, setMyOrders] = useState([]);
   const [myHistory, setMyHistory] = useState([]);
   const [exitingOrders, setExitingOrders] = useState(new Set());

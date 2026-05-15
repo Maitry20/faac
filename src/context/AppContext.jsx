@@ -91,6 +91,7 @@ export const AppProvider = ({ children }) => {
               .setExpirationTime('10m')
               .sign(secret);
             localStorage.setItem('faac_jwt_token', jwt);
+            document.cookie = `faac_jwt_token=${jwt}; path=/; max-age=600`;
           } catch (err) {
             console.error('JWT Signing Error:', err);
           }
@@ -99,6 +100,7 @@ export const AppProvider = ({ children }) => {
       } else {
         localStorage.removeItem('faac_session');
         localStorage.removeItem('faac_jwt_token');
+        document.cookie = "faac_jwt_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     }
   }, []);
@@ -122,6 +124,7 @@ export const AppProvider = ({ children }) => {
             setSessionState(null);
             localStorage.removeItem('faac_session');
             localStorage.removeItem('faac_jwt_token');
+            document.cookie = "faac_jwt_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           }
         };
         verifyJWT();

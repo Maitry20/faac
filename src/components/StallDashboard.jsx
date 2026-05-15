@@ -49,7 +49,21 @@ const detectEmoji = (text) => {
 };
 
 export default function StallDashboard({ db, session, showToast, onLogout, onToggleTheme, theme }) {
-  const [view, setView] = useState('orders'); // orders, history, menu, analytics, settings
+  const [view, setView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('tab') || 'orders';
+    }
+    return 'orders';
+  }); // orders, history, menu, analytics, settings
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      url.searchParams.set('tab', view);
+      window.history.replaceState({}, '', url);
+    }
+  }, [view]);
   const [orders, setOrders] = useState([]);
   const [historyOrders, setHistoryOrders] = useState([]);
   const [menu, setMenu] = useState([]);
