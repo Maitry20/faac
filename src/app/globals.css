@@ -365,8 +365,8 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 20px !important;
   }
   .grid-cards {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
-    gap: 12px !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
   .stall-card {
     padding: 16px !important;
