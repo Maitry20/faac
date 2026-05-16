@@ -87,7 +87,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   const [menu, setMenu] = useState([]);
   const [newItem, setNewItem] = useState({ name: '', price: '', emoji: '🍲', description: '', category: 'Fast Food', available: true, photo: '' });
   const [photoType, setPhotoType] = useState('emoji'); // 'emoji' vs 'upload'
-  const [stallProfile, setStallProfile] = useState({ stall_name: '', min_pickup_time: 10, promotion: '', banner_url: '', categories: ['Fast Food'], food_court: 'North Food Court' });
+  const [stallProfile, setStallProfile] = useState({ stall_name: '', min_pickup_time: 10, promotion: '', banner_url: '', description: '', categories: ['Fast Food'], food_court: 'North Food Court' });
   const [searchQuery, setSearchQuery] = useState('');
 
   const [reviews, setReviews] = useState([]);
@@ -118,12 +118,13 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     setMenu(db.menuItems.filter(m => m.stall_id === session.id));
 
     const profile = db.profiles.find(p => p.id === session.id);
-    if (profile) {
+    if (profile && !stallProfile.stall_name) { // Only load on mount or if name is missing
       setStallProfile({
         stall_name: profile.stall_name || '',
         min_pickup_time: profile.min_pickup_time || 10,
         promotion: profile.promotion || '',
         banner_url: profile.banner_url || '',
+        description: profile.description || '',
         categories: profile.categories || ['Fast Food'],
         food_court: profile.food_court || 'North Food Court',
         status: profile.status || 'Open'
@@ -236,6 +237,29 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     e.preventDefault();
     db.updateProfile(session.id, stallProfile);
     showToast("Stall settings updated! ✨", "success");
+  };
+
+  const handleFileUpload = (e, target) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 1.5 * 1024 * 1024) {
+        showToast("Image is too large! (Limit 1.5MB for mock DB)", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (target === 'banner') {
+          const updatedProfile = { ...stallProfile, banner_url: reader.result };
+          setStallProfile(updatedProfile);
+          db.updateProfile(session.id, updatedProfile);
+          showToast("Banner image updated & saved! 📸", "success");
+        } else if (target === 'menu') {
+          setNewItem(prev => ({ ...prev, photo: reader.result }));
+          showToast("Item photo ready! 🥘");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const analytics = useMemo(() => {
@@ -992,8 +1016,38 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                 </div>
               ) : (
                 <div className="flex-col">
-                  <label>Photo URL</label>
-                  <input type="url" placeholder="https://images.unsplash.com/..." value={newItem.photo} onChange={e => setNewItem({...newItem, photo: e.target.value})} required />
+                  <div className="flex justify-between items-center" style={{ marginBottom: '4px' }}>
+                    <label style={{ margin: 0 }}>Photo URL or Upload</label>
+                    <div style={{ position: 'relative' }}>
+                      <input 
+                        type="file" 
+                        id="menu-upload" 
+                        hidden 
+                        accept="image/*" 
+                        onChange={(e) => handleFileUpload(e, 'menu')} 
+                      />
+                      <button 
+                        type="button" 
+                        className="ghost" 
+                        style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', padding: '4px 12px', fontSize: '0.8rem', height: 'auto' }}
+                        onClick={() => document.getElementById('menu-upload').click()}
+                      >
+                        Upload 📁
+                      </button>
+                    </div>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="https://images.unsplash.com/..." 
+                    value={newItem.photo} 
+                    onChange={e => setNewItem({...newItem, photo: e.target.value})} 
+                    required 
+                  />
+                  {newItem.photo && (
+                    <div style={{ marginTop: '8px' }}>
+                      <img src={newItem.photo} alt="Preview" style={{ width: '100px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1139,8 +1193,43 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
             <label>Stall Name</label>
             <input value={stallProfile.stall_name} onChange={e => setStallProfile({...stallProfile, stall_name: e.target.value})} required />
 
-            <label>Banner URL 📸</label>
-            <input type="url" placeholder="https://images.unsplash.com/..." value={stallProfile.banner_url} onChange={e => setStallProfile({...stallProfile, banner_url: e.target.value})} />
+            <div className="flex justify-between items-center" style={{ marginBottom: '4px' }}>
+              <label style={{ margin: 0 }}>Banner Image 📸</label>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type="file" 
+                  id="banner-upload" 
+                  hidden 
+                  accept="image/*" 
+                  onChange={(e) => handleFileUpload(e, 'banner')} 
+                />
+                <button 
+                  type="button" 
+                  className="ghost" 
+                  style={{ padding: '4px 12px', fontSize: '0.85rem', height: 'auto', borderRadius: '12px' }}
+                  onClick={() => document.getElementById('banner-upload').click()}
+                >
+                  Upload Photo 📁
+                </button>
+              </div>
+            </div>
+            
+            {stallProfile.banner_url && (
+              <div style={{ marginBottom: '12px', position: 'relative', borderRadius: '16px', overflow: 'hidden', height: '120px', border: '2px solid rgba(128,128,128,0.1)' }}>
+                <img src={stallProfile.banner_url} alt="Banner Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent)', display: 'flex', alignItems: 'flex-end', padding: '12px' }}>
+                  <span style={{ color: 'white', fontSize: '0.75rem', fontWeight: 800 }}>LIVE PREVIEW</span>
+                </div>
+              </div>
+            )}
+            
+            <input 
+              type="text" 
+              placeholder="Paste image URL or upload above..." 
+              value={stallProfile.banner_url} 
+              onChange={e => setStallProfile({...stallProfile, banner_url: e.target.value})} 
+              style={{ marginBottom: '24px' }}
+            />
 
             <label>Promotion / Special Offer 📢</label>
             <input placeholder="E.g., 10% off on all burgers today!" value={stallProfile.promotion} onChange={e => setStallProfile({...stallProfile, promotion: e.target.value})} />
@@ -1176,6 +1265,15 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                 </button>
               ))}
             </div>
+
+            <label>Stall Description 📝</label>
+            <textarea 
+              placeholder="Tell students about your stall, specialties, and history..." 
+              value={stallProfile.description} 
+              onChange={e => setStallProfile({...stallProfile, description: e.target.value})} 
+              rows="4"
+              style={{ marginBottom: '24px', resize: 'none' }}
+            />
 
             <button type="submit" className="primary">Save Settings 💾</button>
           </form>

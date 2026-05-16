@@ -270,7 +270,14 @@ export const AppProvider = ({ children }) => {
     setDbData(prev => {
       const next = updater(prev);
       if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch (e) {
+          console.error("Storage error:", e);
+          if (e.name === 'QuotaExceededError') {
+            alert("Storage limit reached! This usually happens if images are too large. Try a smaller file.");
+          }
+        }
       }
       return next;
     });

@@ -62,7 +62,13 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedFoodCourt, setSelectedFoodCourt] = useState('All');
-  const [reviewDraft, setReviewDraft] = useState({ orderId: null, stallId: null, rating: 5, comment: '' });
+  const [reviewDraft, setReviewDraft] = useState({ orderId: null, stall_id: null, rating: 5, comment: '' });
+  const [flippedStalls, setFlippedStalls] = useState({});
+
+  const toggleFlip = (e, id) => {
+    e.stopPropagation();
+    setFlippedStalls(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Group Tray State
   const [groupTray, setGroupTray] = useState(null); // { id, host, stallId, stallName, members: [{ id: 'm1', name: 'You', items: [] }] }
@@ -402,46 +408,98 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
               </div>
             ) : (
               stalls.map(stall => (
-                <div key={stall.id} className="card shimmer stall-card" style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openStallMenu(stall)}>
-                  <button 
-                    className="ghost heart-btn" 
-                    style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.9)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}
-                  >
-                    {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
-                  </button>
+                <div key={stall.id} className={`stall-card ${flippedStalls[stall.id] ? 'is-flipped' : ''}`} style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openStallMenu(stall)}>
                   <div className="stall-card-inner">
-                    <div className="stall-card-img-wrapper">
-                      {stall.banner_url ? (
-                        <img src={stall.banner_url} alt="Banner" className="banner-img" />
-                      ) : (
-                        <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2, fontSize: '3rem' }}>🏪</div>
-                      )}
-                    </div>
-                    <div className="stall-card-content">
-                      <div className="flex justify-between items-start stall-card-header">
-                        <h3 style={{ margin: '0 0 2px 0' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
-                        <span className={`status-pill ${stall.status?.toLowerCase() || 'open'}`}>
-                          {stall.status || 'Open'}
-                        </span>
+                    {/* Front of Card */}
+                    <div className="stall-card-front">
+                      {/* Floating Heart Button at Top Left */}
+                      <button 
+                        className="ghost heart-btn" 
+                        style={{ position: 'absolute', top: 12, left: 12, zIndex: 12, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.95)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}
+                      >
+                        {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
+                      </button>
+
+                      <button 
+                        className="ghost info-btn" 
+                        style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.9)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        onClick={(e) => toggleFlip(e, stall.id)}
+                        title="View Stall Description"
+                      >
+                        ℹ️
+                      </button>
+
+                      <div className="stall-card-img-wrapper">
+                        {stall.banner_url ? (
+                          <img 
+                            src={stall.banner_url} 
+                            alt="Banner" 
+                            className="banner-img" 
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = ''; // Force fallback div
+                              e.target.parentElement.innerHTML = '<div class="banner-img flex items-center justify-center" style="background: var(--current-primary); opacity: 0.2; fontSize: 3rem">🏪</div>';
+                            }}
+                          />
+                        ) : (
+                          <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2, fontSize: '3rem' }}>🏪</div>
+                        )}
                       </div>
-                      <div className="flex justify-between items-end stall-card-badges" style={{ marginTop: '4px', flexWrap: 'wrap', gap: '6px' }}>
-                        <div className="flex-col">
-                          <span className="badge" style={{ fontSize: '0.7rem', padding: '3px 8px' }}>⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m</span>
-                          {stall.categories && <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px' }}>{stall.categories.join(' • ')}</div>}
+                      
+                      <div className="stall-card-content">
+                        <div className="flex justify-between items-start stall-card-header">
+                          <h3 style={{ margin: '0 0 2px 0', fontWeight: '800' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
                         </div>
-                        <div className="flex-col items-end">
-                          <span className="badge" style={{ background: 'var(--current-primary)', opacity: 0.9, color: '#fff', fontSize: '0.7rem', padding: '3px 8px' }}>
-                            📍 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'FC'}
+                        
+                        <div className="flex items-center gap-2" style={{ marginBottom: '4px' }}>
+                          <span className="badge" style={{ background: '#FF6B6B', color: 'white', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            ⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m
                           </span>
-                          {stall.rating && (
-                            <div style={{ fontWeight: 'bold', fontSize: '0.7rem', marginTop: '2px', color: 'var(--current-primary)' }}>
-                              ⭐ {stall.rating.toFixed(1)}
+                        </div>
+
+                        <div className="flex justify-between items-end" style={{ marginTop: 'auto' }}>
+                          <div style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: '600' }}>
+                            {stall.categories && stall.categories.join(' • ')}
+                          </div>
+                          
+                          <div className="flex-col items-end gap-1">
+                            <span className="badge" style={{ background: '#FF6B6B', color: 'white', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '20px', fontWeight: '800' }}>
+                              📍 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'FC'}
+                            </span>
+                            
+                            {stall.rating && (
+                              <div style={{ fontWeight: '800', fontSize: '0.8rem', color: '#FFB800', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                ⭐ {stall.rating.toFixed(1)}
+                              </div>
+                            )}
+
+                            {/* Mobile Description Toggle */}
+                            <div 
+                              className={`mobile-desc-toggle ${flippedStalls[stall.id] ? 'active' : ''}`}
+                              onClick={(e) => toggleFlip(e, stall.id)}
+                              style={{ padding: '4px', marginTop: '2px' }}
+                            >
+                              <span style={{ fontSize: '0.9rem' }}>▼</span>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* Back of Card */}
+                    <div className="stall-card-back" onClick={(e) => toggleFlip(e, stall.id)}>
+                      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏬</div>
+                      <h3>{stall.stall_name}</h3>
+                      <p>{stall.description || "Fresh food, great taste! Visit us to explore our specialties. 😊"}</p>
+                      <button className="ghost" style={{ marginTop: '24px', padding: '8px 20px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                        Back to Menu ↩️
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className={`mobile-desc-drawer ${flippedStalls[stall.id] ? 'open' : ''}`}>
+                    <p>{stall.description || "Fresh food, great taste! Visit us to explore our specialties. 😊"}</p>
                   </div>
                 </div>
               ))

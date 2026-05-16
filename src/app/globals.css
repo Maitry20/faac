@@ -476,7 +476,8 @@ h6 {
 
   .heart-btn {
     top: 8px !important;
-    right: 8px !important;
+    left: 8px !important;
+    right: auto !important;
     width: 32px !important;
     height: 32px !important;
     font-size: 1rem !important;
@@ -1480,4 +1481,193 @@ textarea:focus {
 
 .back-btn {
   animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stall Card Flip Animation (Desktop Only) */
+@media (min-width: 769px) {
+  .stall-card {
+    perspective: 1500px;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border: none !important;
+    height: 310px !important;
+  }
+
+  .stall-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  .stall-card.is-flipped .stall-card-inner {
+    transform: rotateX(180deg);
+  }
+
+  .stall-card-front, .stall-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 24px;
+    overflow: hidden;
+  }
+
+  .stall-card-front {
+    background: var(--current-card);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 24px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+    box-sizing: border-box;
+  }
+
+  .stall-card-back {
+    background: var(--current-card);
+    transform: rotateX(180deg);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 32px;
+    text-align: center;
+    border: 2px solid var(--current-primary);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+  }
+
+  .stall-card-back h3 {
+    color: var(--current-primary);
+    margin-bottom: 12px;
+    font-size: 1.4rem;
+  }
+
+  .stall-card-back p {
+    font-size: 1rem;
+    line-height: 1.6;
+    opacity: 0.9;
+    margin: 0;
+    font-weight: 500;
+  }
+}
+
+/* Mobile Stall Description Drawer */
+@media (max-width: 768px) {
+  .info-btn {
+    display: none !important;
+  }
+  
+  .stall-card-back {
+    display: none !important;
+  }
+  
+  .stall-card-inner {
+    transform: none !important;
+    transition: none !important;
+    perspective: none !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .stall-card-front {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px !important;
+    box-shadow: none !important;
+    border-radius: 20px !important;
+    background: transparent !important;
+    transform: none !important;
+    z-index: 1 !important;
+  }
+
+  .stall-card {
+    background: var(--current-card) !important;
+    padding: 0 !important;
+    border-radius: 24px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  .stall-card .banner-img {
+    width: 90px !important;
+    height: 90px !important;
+    min-width: 90px !important;
+    border-radius: 18px !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+  }
+
+  .stall-card-content {
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .mobile-desc-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .mobile-desc-toggle.active {
+    opacity: 1;
+    color: var(--current-primary);
+  }
+
+  .mobile-desc-toggle span {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: inline-block;
+  }
+  
+  .mobile-desc-toggle.active span {
+    transform: rotate(180deg);
+  }
+
+  .mobile-desc-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s ease, opacity 0.3s ease;
+    background: rgba(128, 128, 128, 0.03);
+    border-radius: 0 0 24px 24px;
+    padding: 0 16px;
+    opacity: 0;
+  }
+
+  .mobile-desc-drawer.open {
+    max-height: 300px;
+    padding: 4px 20px 20px;
+    border-top: 1px dashed rgba(128, 128, 128, 0.1);
+    opacity: 1;
+  }
+  
+  .mobile-desc-drawer p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.7;
+    font-weight: 500;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-desc-toggle, .mobile-desc-drawer {
+    display: none !important;
+  }
 }
