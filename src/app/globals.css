@@ -68,23 +68,23 @@ h6 {
 }
 
 .sidebar {
-  width: 280px;
-  min-width: 280px;
+  width: 240px;
+  min-width: 240px;
   background: var(--current-card);
-  padding: 32px 24px;
+  padding: 28px 20px;
   display: flex;
   flex-direction: column;
-  border-right: 2px solid rgba(128, 128, 128, 0.05);
+  border-right: 1px solid rgba(128, 128, 128, 0.06);
   z-index: 100;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.01);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
 .sidebar.collapsed {
-  width: 88px;
-  min-width: 88px;
-  padding: 32px 16px;
+  width: 80px;
+  min-width: 80px;
+  padding: 28px 12px;
 }
 
 .sidebar-toggle {
@@ -113,16 +113,16 @@ h6 {
 }
 
 .sidebar-item {
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   overflow: hidden;
   white-space: nowrap;
 }
@@ -142,7 +142,7 @@ h6 {
 .sidebar-logo {
   transition: all 0.4s ease;
   overflow: hidden;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -158,7 +158,7 @@ h6 {
   max-height: 100px;
   overflow: hidden;
   color: var(--current-primary);
-  font-size: 2rem;
+  font-size: 1.65rem;
   line-height: 1.2;
   font-family: 'Fredoka One', cursive;
   letter-spacing: 0.5px;
@@ -171,7 +171,7 @@ h6 {
 }
 
 .logo-icon-wrapper {
-  font-size: 2.2rem;
+  font-size: 1.85rem;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: 'Fredoka One', cursive;
 }
@@ -204,13 +204,98 @@ h6 {
 
 .main-content {
   flex: 1;
-  padding: 40px;
+  padding: 32px 40px;
   height: 100vh;
   overflow-y: auto;
   box-sizing: border-box;
   max-width: 1200px;
   margin: 0 auto;
   min-width: 0;
+}
+
+/* Symmetrical Grid for Stalls */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+@media (min-width: 1024px) {
+  .grid-cards {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 28px !important;
+  }
+}
+
+/* Stall Card Flip Animation (Desktop Only) */
+@media (min-width: 769px) {
+  .stall-card {
+    perspective: 1500px;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border: none !important;
+    height: 355px !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .stall-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .stall-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  .stall-card.is-flipped .stall-card-inner {
+    transform: rotateX(180deg);
+  }
+
+  .stall-card-front, .stall-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 28px !important;
+    overflow: hidden;
+    border: 1.5px solid rgba(128, 128, 128, 0.08) !important;
+  }
+
+  .stall-card-front {
+    background: #FFFFFF !important;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 14px 18px 14px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04) !important;
+    box-sizing: border-box;
+  }
+
+  .stall-card .banner-img {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .stall-card:hover .banner-img {
+    transform: scale(1.05);
+  }
+
+  .stall-card.status-open .stall-card-front {
+    border-right: 5.5px solid #10B981 !important;
+  }
+
+  .stall-card.status-busy .stall-card-front {
+    border-right: 5.5px solid #F59E0B !important;
+  }
+
+  .stall-card.status-closed .stall-card-front {
+    border-right: 5.5px solid #EF4444 !important;
+  }
 }
 
 .top-banner {
@@ -1225,8 +1310,8 @@ textarea:focus {
 
 .grid-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 20px;
   align-items: stretch;
 }
 
@@ -1812,7 +1897,12 @@ textarea:focus {
     box-shadow: none !important;
     padding: 0 !important;
     border: none !important;
-    height: 310px !important;
+    height: 355px !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .stall-card:hover {
+    transform: translateY(-4px);
   }
 
   .stall-card-inner {
@@ -1833,18 +1923,71 @@ textarea:focus {
     height: 100%;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    border-radius: 24px;
+    border-radius: 28px !important;
     overflow: hidden;
+    border: 1.5px solid rgba(128, 128, 128, 0.08) !important;
   }
 
   .stall-card-front {
-    background: var(--current-card);
+    background: #FFFFFF !important;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    padding: 24px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+    padding: 14px 14px 18px 14px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04) !important;
     box-sizing: border-box;
+  }
+
+  .stall-card .banner-img {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .stall-card:hover .banner-img {
+    transform: scale(1.05);
+  }
+
+  .view-menu-pill-btn {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .view-menu-pill-btn:hover {
+    background: #FF5A5F !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(255, 90, 95, 0.3) !important;
+    transform: translateY(-1px);
+  }
+
+  .stall-card.status-open .stall-card-front {
+    border-right: 5.5px solid #10B981 !important;
+  }
+
+  .stall-card.status-busy .stall-card-front {
+    border-right: 5.5px solid #F59E0B !important;
+  }
+
+  .stall-card.status-closed .stall-card-front {
+    border-right: 5.5px solid #EF4444 !important;
+  }
+
+  .heart-btn-desktop:hover {
+    transform: scale(1.1);
+    background: #FFE2E4 !important;
+  }
+
+  .info-btn-desktop:hover {
+    transform: scale(1.1);
+    background: #D5E6FE !important;
+  }
+
+  .desktop-view-menu-btn:hover {
+    background: #FF5A5F !important;
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 90, 95, 0.2);
+  }
+
+  .desktop-view-menu-btn:hover span {
+    transform: translateX(3px);
   }
 
   .stall-card-back {
@@ -1857,7 +2000,7 @@ textarea:focus {
     align-items: center;
     padding: 32px;
     text-align: center;
-    border: 2px solid var(--current-primary);
+    border: 2px solid var(--current-primary) !important;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
     box-sizing: border-box;
   }
@@ -1995,4 +2138,78 @@ textarea:focus {
   .mobile-desc-toggle, .mobile-desc-drawer {
     display: none !important;
   }
+}
+
+/* Custom Category Pills Style matching Mockup */
+.category-pill {
+  border: 1.5px solid #FFC2C4 !important;
+  background: white !important;
+  color: #333333 !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.category-pill.active {
+  background: #FF5A5F !important;
+  color: white !important;
+  border-color: #FF5A5F !important;
+  box-shadow: 0 4px 12px rgba(255, 90, 95, 0.25) !important;
+}
+
+.category-pill.inactive:hover {
+  background: #FFF0F1 !important;
+  border-color: #FF5A5F !important;
+}
+
+/* Custom Search Input styles */
+.custom-search-input:focus {
+  outline: none !important;
+  border-color: #FF5A5F !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+.custom-foodcourt-select:focus {
+  outline: none !important;
+  border-color: #FF5A5F !important;
+}
+
+.join-group-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 213, 79, 0.4) !important;
+}
+
+/* Custom Banner Carousel Scroll Buttons Style matching mockup exactly */
+.banner-nav-btn {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), 0 2px 5px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+.banner-nav-btn:hover {
+  transform: translateY(-50%) scale(1.08) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 3px 8px rgba(0, 0, 0, 0.05) !important;
+  background: #FFFFFF !important;
+}
+
+.banner-nav-btn:active {
+  transform: translateY(-50%) scale(0.95) !important;
+}
+
+/* Custom Wide View Menu Button on Stall Cards */
+.view-menu-wide-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.view-menu-wide-btn:hover {
+  background: #FFE5E7 !important;
+  transform: scale(1.02) !important;
+}
+
+.view-menu-wide-btn:active {
+  transform: scale(0.97) !important;
 }
