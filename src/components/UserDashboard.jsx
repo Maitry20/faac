@@ -14,6 +14,7 @@ const generateUUID = () => {
 };
 
 export default function UserDashboard({ db, session, showToast, onLogout, onToggleTheme, theme }) {
+  const [isMobile, setIsMobile] = useState(false);
   const [stalls, setStalls] = useState([]);
   const [selectedStall, setSelectedStall] = useState(null);
   const [menu, setMenu] = useState([]);
@@ -28,6 +29,13 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     }
     return 'home';
   }); // home (stalls), menu, orders, history, stats, profile
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize(); // initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -407,103 +415,211 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
                 <p>Try selecting a different food court or category!</p>
               </div>
             ) : (
-              stalls.map(stall => (
-                <div key={stall.id} className={`stall-card ${flippedStalls[stall.id] ? 'is-flipped' : ''}`} style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openStallMenu(stall)}>
-                  <div className="stall-card-inner">
-                    {/* Front of Card */}
-                    <div className="stall-card-front">
-                      {/* Floating Heart Button at Top Left */}
-                      <button 
-                        className="ghost heart-btn" 
-                        style={{ position: 'absolute', top: 12, left: 12, zIndex: 12, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.95)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}
-                      >
-                        {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
-                      </button>
+              stalls.map(stall => {
+                const statusClass = `status-${(stall.status || 'Open').toLowerCase()}`;
+                return (
+                  <div key={stall.id} className={`stall-card ${statusClass} ${flippedStalls[stall.id] && !isMobile ? 'is-flipped' : ''}`} style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openStallMenu(stall)}>
+                  {!isMobile ? (
+                    <>
+                      <div className="stall-card-inner">
+                        {/* Front of Card */}
+                        <div className="stall-card-front">
+                          {/* Floating Heart Button at Top Left */}
+                          <button 
+                            className="ghost heart-btn" 
+                            style={{ position: 'absolute', top: 12, left: 12, zIndex: 12, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.95)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                            onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}
+                          >
+                            {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
+                          </button>
 
-                      <button 
-                        className="ghost info-btn" 
-                        style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.9)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        onClick={(e) => toggleFlip(e, stall.id)}
-                        title="View Stall Description"
-                      >
-                        ℹ️
-                      </button>
+                          <button 
+                            className="ghost info-btn" 
+                            style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, padding: 8, fontSize: '1.2rem', background: 'rgba(255,255,255,0.9)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                            onClick={(e) => toggleFlip(e, stall.id)}
+                            title="View Stall Description"
+                          >
+                            ℹ️
+                          </button>
 
-                      <div className="stall-card-img-wrapper">
-                        {stall.banner_url ? (
-                          <img 
-                            src={stall.banner_url} 
-                            alt="Banner" 
-                            className="banner-img" 
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = ''; // Force fallback div
-                              e.target.parentElement.innerHTML = '<div class="banner-img flex items-center justify-center" style="background: var(--current-primary); opacity: 0.2; fontSize: 3rem">🏪</div>';
-                            }}
-                          />
-                        ) : (
-                          <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2, fontSize: '3rem' }}>🏪</div>
-                        )}
-                      </div>
-                      
-                      <div className="stall-card-content">
-                        <div className="flex justify-between items-start stall-card-header">
-                          <h3 style={{ margin: '0 0 2px 0', fontWeight: '800' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
-                        </div>
-                        
-                        <div className="flex items-center gap-2" style={{ marginBottom: '4px' }}>
-                          <span className="badge" style={{ background: '#FF6B6B', color: 'white', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            ⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-end" style={{ marginTop: 'auto' }}>
-                          <div style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: '600' }}>
-                            {stall.categories && stall.categories.join(' • ')}
+                          <div className="stall-card-img-wrapper">
+                            {stall.banner_url ? (
+                              <img 
+                                src={stall.banner_url} 
+                                alt="Banner" 
+                                className="banner-img" 
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = ''; // Force fallback div
+                                  e.target.parentElement.innerHTML = '<div class="banner-img flex items-center justify-center" style="background: var(--current-primary); opacity: 0.2; fontSize: 3rem">🏪</div>';
+                                }}
+                              />
+                            ) : (
+                              <div className="banner-img flex items-center justify-center" style={{ background: 'var(--current-primary)', opacity: 0.2, fontSize: '3rem' }}>🏪</div>
+                            )}
                           </div>
                           
-                          <div className="flex-col items-end gap-1">
-                            <span className="badge" style={{ background: '#FF6B6B', color: 'white', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '20px', fontWeight: '800' }}>
-                              📍 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'FC'}
-                            </span>
+                          <div className="stall-card-content">
+                            <div className="flex justify-between items-start stall-card-header">
+                              <h3 style={{ margin: '0 0 2px 0', fontWeight: '800' }}>{stall.stall_name || 'Unnamed Stall'}</h3>
+                            </div>
                             
-                            {stall.rating && (
-                              <div style={{ fontWeight: '800', fontSize: '0.8rem', color: '#FFB800', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                                ⭐ {stall.rating.toFixed(1)}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2" style={{ marginBottom: '4px' }}>
+                              <span className="badge" style={{ background: '#FF6B6B', color: 'white', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                ⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m
+                              </span>
+                            </div>
 
-                            {/* Mobile Description Toggle */}
-                            <div 
-                              className={`mobile-desc-toggle ${flippedStalls[stall.id] ? 'active' : ''}`}
-                              onClick={(e) => toggleFlip(e, stall.id)}
-                              style={{ padding: '4px', marginTop: '2px' }}
-                            >
-                              <span style={{ fontSize: '0.9rem' }}>▼</span>
+                            <div className="flex justify-between items-end" style={{ marginTop: 'auto' }}>
+                              <div style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: '600' }}>
+                                {stall.categories && stall.categories.join(' • ')}
+                              </div>
+                              
+                              <div className="flex-col items-end gap-1">
+                                <span className="badge" style={{ background: '#FF6B6B', color: 'white', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '20px', fontWeight: '800' }}>
+                                  📍 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'FC'}
+                                </span>
+                                
+                                {stall.rating && (
+                                  <div style={{ fontWeight: '800', fontSize: '0.8rem', color: '#FFB800', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                    ⭐ {stall.rating.toFixed(1)}
+                                  </div>
+                                )}
+
+                                {/* Mobile Description Toggle */}
+                                <div 
+                                  className={`mobile-desc-toggle ${flippedStalls[stall.id] ? 'active' : ''}`}
+                                  onClick={(e) => toggleFlip(e, stall.id)}
+                                  style={{ padding: '4px', marginTop: '2px' }}
+                                >
+                                  <span style={{ fontSize: '0.9rem' }}>▼</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Back of Card */}
-                    <div className="stall-card-back" onClick={(e) => toggleFlip(e, stall.id)}>
-                      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏬</div>
-                      <h3>{stall.stall_name}</h3>
-                      <p>{stall.description || "Fresh food, great taste! Visit us to explore our specialties. 😊"}</p>
-                      <button className="ghost" style={{ marginTop: '24px', padding: '8px 20px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                        Back to Menu ↩️
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className={`mobile-desc-drawer ${flippedStalls[stall.id] ? 'open' : ''}`}>
-                    <p>{stall.description || "Fresh food, great taste! Visit us to explore our specialties. 😊"}</p>
-                  </div>
+                        {/* Back of Card */}
+                        <div className="stall-card-back" onClick={(e) => toggleFlip(e, stall.id)}>
+                          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏬</div>
+                          <h3>{stall.stall_name}</h3>
+                          <p>{stall.description || "Fresh food, great taste! Visit us to explore our specialties. 😊"}</p>
+                          <button className="ghost" style={{ marginTop: '24px', padding: '8px 20px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                            Back to Menu ↩️
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className={`mobile-desc-drawer ${flippedStalls[stall.id] ? 'open' : ''}`}>
+                        <p>{stall.description || "Fresh food, great taste! Visit us to explore our specialties. 😊"}</p>
+                      </div>
+                    </>
+                  ) : (
+                    /* Mobile Version matching image */
+                    <>
+                      <div className={`stall-card-mobile ${flippedStalls[stall.id] ? 'is-expanded' : ''}`}>
+                        <div className="mobile-card-img-wrapper">
+                          <button className="heart-btn-mobile" onClick={(e) => { e.stopPropagation(); db.toggleFavorite(session.id, stall.id); }}>
+                            {userProfile?.favorite_stalls?.includes(stall.id) ? '❤️' : '🤍'}
+                          </button>
+                          <div className="wait-time-pill-mobile">
+                            ⏱️ {getDynamicWaitTime(stall.id, stall.min_pickup_time)}m
+                          </div>
+                          <span className="location-pill-mobile floating-badge">
+                            🍷 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'Main'}
+                          </span>
+                          {stall.banner_url ? (
+                            <img src={stall.banner_url} alt="Banner" onError={(e) => { e.target.style.display = 'none'; }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', background: 'var(--current-primary)', opacity: 0.2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🏪</div>
+                          )}
+                        </div>
+                        
+                        <div className="mobile-card-content">
+                          <div className="mobile-sheet-handle"></div>
+                          
+                          <div className="mobile-card-header">
+                            <h3 className="stall-title-mobile">{stall.stall_name || 'Unnamed Stall'}</h3>
+                            <span className="location-pill-mobile header-badge">
+                              🍷 {stall.food_court_short || stall.food_court?.split(' ')[0] || 'Main'}
+                            </span>
+                            <div className="stall-rating-mobile header-rating">
+                              ⭐ {stall.rating ? stall.rating.toFixed(1) : '5.0'}
+                            </div>
+                          </div>
+                          
+                          <div className="mobile-card-desc-row">
+                            <p className="stall-desc-mobile">
+                              {(() => {
+                                const parts = (stall.description || "Juicy burgers, crispy fries and more!").split('. ');
+                                return parts[0] ? parts[0] + (parts.length > 1 ? '.' : '') : '';
+                              })()}
+                            </p>
+                            <div className="stall-rating-mobile normal-rating">
+                              ⭐ {stall.rating ? stall.rating.toFixed(1) : '5.0'}
+                            </div>
+                          </div>
+                          
+                          <div className="mobile-card-categories">
+                            {stall.categories && stall.categories.slice(0, 2).map((cat, i) => (
+                              <React.Fragment key={cat}>
+                                <span className="cat-pill-mobile">{cat}</span>
+                                {i === 0 && stall.categories.length > 1 && <span className="cat-dot-mobile">•</span>}
+                              </React.Fragment>
+                            ))}
+                          </div>
+
+                          <div className={`mobile-desc-drawer ${flippedStalls[stall.id] ? 'open' : ''}`}>
+                            <p style={{ display: 'flex', alignItems: 'center' }}>
+                              {(() => {
+                                const parts = (stall.description || "Juicy burgers, crispy fries and more!").split('. ');
+                                return parts.slice(1).join('. ') || stall.description || "Fresh food, great taste! Visit us to explore our specialties. 😊";
+                              })()}
+                            </p>
+                          </div>
+                          
+                          <div className="mobile-card-divider"></div>
+                          
+                          <div className="mobile-card-footer">
+                            <div 
+                              className="view-menu-btn-wrapper" 
+                              onClick={() => openStallMenu(stall)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                            >
+                              <span className="view-menu-text">View Menu</span>
+                              <span className="view-menu-icon">→</span>
+                            </div>
+                            <button 
+                              className={`ghost chevron-btn-mobile ${flippedStalls[stall.id] ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleFlip(e, stall.id); }}
+                            >
+                              <svg 
+                                width="14" 
+                                height="14" 
+                                viewBox="0 0 24 24" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth="3" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round"
+                                style={{ 
+                                  color: '#FF5A5F',
+                                  transition: 'transform 0.3s ease',
+                                  transform: flippedStalls[stall.id] ? 'rotate(180deg)' : 'rotate(0deg)'
+                                }}
+                              >
+                                <path d="M6 9l6 6 6-6" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-              ))
-            )}
+              );
+            })
+          )}
           </div>
         </div>
       )}
