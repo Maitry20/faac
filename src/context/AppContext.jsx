@@ -195,39 +195,39 @@ export const AppProvider = ({ children }) => {
       loadData();
 
       // ── LIVE POLLING (Real-time Progress Tracker) ──────────────────────────
+      let isPolling = false;
       const liveInterval = setInterval(async () => {
-        if (API_URL) {
-          try {
-            const [profRes, ordRes, revRes] = await Promise.all([
-              fetch(`${API_URL}/profiles`),
-              fetch(`${API_URL}/orders`),
-              fetch(`${API_URL}/reviews`)
-            ]);
-            if (profRes.ok && ordRes.ok && revRes.ok) {
-              const profiles = await profRes.json();
-              const orders = await ordRes.json();
-              const reviews = await revRes.json();
-              setDbData(prev => {
-                const updated = { ...prev, profiles, orders, reviews };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-                return updated;
-              });
-            }
-          } catch (err) {}
-        }
-
-        // localStorage fallback for same-tab updates
-        const current = localStorage.getItem(STORAGE_KEY);
-        if (current) {
-          try {
+        if (!API_URL || isPolling || document.hidden) return;
+        isPolling = true;
+        try {
+          const [profRes, ordRes, revRes] = await Promise.all([
+            fetch(`${API_URL}/profiles`),
+            fetch(`${API_URL}/orders`),
+            fetch(`${API_URL}/reviews`)
+          ]);
+          if (profRes.ok && ordRes.ok && revRes.ok) {
+            const profiles = await profRes.json();
+            const orders = await ordRes.json();
+            const reviews = await revRes.json();
             setDbData(prev => {
-              const prevStr = JSON.stringify(prev);
-              if (prevStr !== current) return JSON.parse(current);
+              const updated = { ...prev, profiles, orders, reviews };
+              const updatedStr = JSON.stringify(updated);
+              // Only trigger expensive localStorage writes and re-renders if data actually changed
+              if (updatedStr !== JSON.stringify(prev)) {
+                localStorage.setItem(STORAGE_KEY, updatedStr);
+                return updated;
+              }
               return prev;
             });
-          } catch (err) {}
+          }
+        } catch (err) {
+          console.warn("Live polling error:", err);
+        } finally {
+          isPolling = false;
         }
-      }, 1500);
+        // Note: Cross-tab sync is handled by the 'storage' event listener above,
+        // no need to manually read localStorage on an interval.
+      }, 5000);
 
 
       const handleClick = () => {
