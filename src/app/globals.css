@@ -23,8 +23,8 @@
   --current-accent: var(--accent-light);
   --current-bg: var(--bg-light);
   --current-text: var(--text-light);
-  --current-active-bg: #FFEAD2;
-  --current-active-color: var(--current-primary);
+  --current-active-bg: rgba(255, 94, 94, 0.08);
+  --current-active-color: #FF5E5E;
   --topbar-bg: rgba(255, 248, 240, 0.82);
 }
 
@@ -44,8 +44,8 @@ body.dark {
   --current-accent: var(--accent-dark);
   --current-bg: var(--bg-dark);
   --current-text: var(--text-dark);
-  --current-active-bg: #35261F;
-  --current-active-color: #FFA4A4;
+  --current-active-bg: rgba(255, 94, 94, 0.12);
+  --current-active-color: #FF8A8A;
   --topbar-bg: rgba(26, 26, 46, 0.82);
 }
 
@@ -193,8 +193,12 @@ h6 {
 }
 
 .sidebar-item:hover {
-  background: rgba(128, 128, 128, 0.1);
+  background: rgba(255, 94, 94, 0.04);
   transform: translateX(4px);
+}
+
+.sidebar.collapsed .sidebar-item:hover {
+  transform: scale(1.08);
 }
 
 .sidebar-item.active {

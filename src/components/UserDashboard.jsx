@@ -99,6 +99,7 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState('stalls');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedFoodCourt, setSelectedFoodCourt] = useState('All');
   const [reviewDraft, setReviewDraft] = useState({ orderId: null, stall_id: null, rating: 5, comment: '' });
@@ -258,6 +259,21 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     }
   }, [db, session.id, selectedStall, searchQuery, selectedCategory, selectedFoodCourt, exitingOrders]);
 
+  const filteredDishes = useMemo(() => {
+    if (searchType !== 'dishes') return [];
+    const allStalls = db.profiles.filter(p => p.role === 'stall' && p.is_approved);
+    const stallMap = allStalls.reduce((acc, s) => ({ ...acc, [s.id]: s }), {});
+    return db.menuItems.filter(item => {
+      const parentStall = stallMap[item.stall_id];
+      if (!parentStall) return false;
+      const matchesSearch = (item.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+                            (item.description || '').toLowerCase().includes((searchQuery || '').toLowerCase());
+      const matchesCategory = selectedCategory === 'All' || (parentStall.categories && parentStall.categories.includes(selectedCategory));
+      const matchesFoodCourt = selectedFoodCourt === 'All' || (parentStall.food_court && parentStall.food_court.trim().toLowerCase() === selectedFoodCourt.trim().toLowerCase());
+      return matchesSearch && matchesCategory && matchesFoodCourt;
+    });
+  }, [db.menuItems, db.profiles, searchQuery, searchType, selectedCategory, selectedFoodCourt]);
+
   const openStallMenu = (stall) => {
     if (stall.status === 'Closed') {
       showToast(`${stall.stall_name} is currently Closed 🛑`, "error");
@@ -298,9 +314,9 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     showToast("Profile updated! ✨", "success");
   };
 
-  const addToCart = (item) => {
-    const stall = db.profiles.find(p => p.id === selectedStall?.id);
-    if (stall?.status === 'Closed') {
+  const addToCart = (item, explicitStall = null) => {
+    const activeStall = explicitStall || selectedStall || db.profiles.find(p => p.id === item.stall_id);
+    if (activeStall?.status === 'Closed') {
       showToast("This stall is now closed 🛑", "error");
       return;
     }
@@ -321,17 +337,22 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
       return;
     }
 
-    if (cart.length > 0 && cart[0].stall_id !== selectedStall.id) {
+    if (cart.length > 0 && cart[0].stall_id !== activeStall?.id) {
       showToast("You can only order from one stall at a time! 🛒", "error");
       return;
     }
+
+    if (!selectedStall) {
+      setSelectedStall(activeStall);
+    }
+
     const existing = cart.find(c => c.id === item.id);
     if (existing) {
       setCart(cart.map(c => c.id === item.id ? { ...c, qty: c.qty + 1 } : c));
     } else {
       setCart([...cart, { ...item, qty: 1 }]);
     }
-    showToast(`Added ${item.name} ${item.emoji}`);
+    showToast(`Added ${item.name} ${item.emoji || ''}`);
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -427,37 +448,104 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
   ];
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="😋 Foodie" onToggleTheme={onToggleTheme} theme={theme}>
+    <DashboardLayout 
+      sidebarItems={sidebarItems} 
+      onLogout={onLogout} 
+      userBadge="😋 Foodie" 
+      onToggleTheme={onToggleTheme} 
+      theme={theme}
+      userName={profile.name || userProfile?.name || session?.profileData?.name || 'Foodie Student'}
+      userRole="Student"
+    >
       {view === 'home' && (
         <div className="animated-list" style={{ padding: '0 0 24px 0' }}>
           {/* Top Search & Actions Row */}
           <div className="dashboard-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-            {/* Search Input Container */}
-            <div className="search-input-wrapper" style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
-              <span className="search-icon" style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: '#555', fontSize: '1rem', pointerEvents: 'none' }}>
-                🔍
-              </span>
-              <input
-                type="text"
-                placeholder="Search for stalls or dishes..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '44px',
-                  padding: '0 16px 0 46px',
-                  margin: 0,
-                  background: 'white',
-                  border: '1.5px solid rgba(0, 0, 0, 0.08)',
-                  borderRadius: '30px',
-                  fontSize: '0.92rem',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-                  transition: 'all 0.2s',
-                  boxSizing: 'border-box'
-                }}
-                className="custom-search-input"
-              />
+            {/* Search Input and Type Toggle Container */}
+            <div style={{ display: 'flex', flex: 1, minWidth: '280px', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="search-input-wrapper" style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                <span className="search-icon" style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: '#555', fontSize: '1rem', pointerEvents: 'none' }}>
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  placeholder={searchType === 'stalls' ? "Search for stalls..." : "Search for dishes..."}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '44px',
+                    padding: '0 16px 0 46px',
+                    margin: 0,
+                    background: 'white',
+                    border: '1.5px solid rgba(0, 0, 0, 0.08)',
+                    borderRadius: '30px',
+                    fontSize: '0.92rem',
+                    fontWeight: '600',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                  className="custom-search-input"
+                />
+              </div>
+
+              {/* Modern sliding segmented toggle switch */}
+              <div className="search-type-toggle" style={{
+                display: 'flex',
+                background: 'rgba(128, 128, 128, 0.08)',
+                padding: '4px',
+                borderRadius: '24px',
+                height: '44px',
+                alignItems: 'center',
+                boxSizing: 'border-box',
+                border: '1px solid rgba(0, 0, 0, 0.03)',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
+                gap: '2px'
+              }}>
+                <button
+                  onClick={() => setSearchType('stalls')}
+                  style={{
+                    border: 'none',
+                    borderRadius: '20px',
+                    padding: '0 16px',
+                    fontWeight: '800',
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    background: searchType === 'stalls' ? 'var(--current-primary)' : 'transparent',
+                    color: searchType === 'stalls' ? 'white' : '#555',
+                    transition: 'all 0.2s ease',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: searchType === 'stalls' ? '0 2px 8px rgba(255, 94, 94, 0.25)' : 'none'
+                  }}
+                >
+                  🏪 Stalls
+                </button>
+                <button
+                  onClick={() => setSearchType('dishes')}
+                  style={{
+                    border: 'none',
+                    borderRadius: '20px',
+                    padding: '0 16px',
+                    fontWeight: '800',
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    background: searchType === 'dishes' ? 'var(--current-primary)' : 'transparent',
+                    color: searchType === 'dishes' ? 'white' : '#555',
+                    transition: 'all 0.2s ease',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: searchType === 'dishes' ? '0 2px 8px rgba(255, 94, 94, 0.25)' : 'none'
+                  }}
+                >
+                  🍔 Dishes
+                </button>
+              </div>
             </div>
 
             {/* Right side tools */}
@@ -681,7 +769,103 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
           </div>
 
           <div className="grid-cards">
-            {stalls.length === 0 ? (
+            {searchType === 'dishes' ? (
+              filteredDishes.length === 0 ? (
+                <div className="empty-state card col-span-full">
+                  <h2>No dishes found 🍳</h2>
+                  <p>Try searching for a different item name or description!</p>
+                </div>
+              ) : (
+                filteredDishes.map(item => {
+                  const stall = db.profiles.find(p => p.id === item.stall_id);
+                  const isStallClosed = stall?.status === 'Closed';
+
+                  return (
+                    <div key={item.id} className={`card flex-col justify-between ${!item.available || isStallClosed ? 'sold-out-card' : ''}`} style={{
+                      padding: '20px',
+                      borderRadius: '24px',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.02)',
+                      border: '1.5px solid rgba(128, 128, 128, 0.08)',
+                      background: '#FFFFFF',
+                      transition: 'all 0.25s ease'
+                    }}>
+                      <div>
+                        {/* Sold by Stall Header */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '12px',
+                          background: 'rgba(128, 128, 128, 0.04)',
+                          padding: '6px 12px',
+                          borderRadius: '12px',
+                        }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            🏪 {stall?.stall_name || 'Stall'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#888', flexShrink: 0 }}>
+                            📍 {stall?.food_court_short || stall?.food_court?.split(' ')[0] || 'Food Court'}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between items-start" style={{ marginBottom: '12px' }}>
+                          <div className="flex items-center gap-3">
+                            {item.photo ? (
+                              <img src={item.photo} alt={item.name} style={{ width: '56px', height: '56px', borderRadius: '14px', objectFit: 'cover' }} />
+                            ) : (
+                              <span style={{ fontSize: '2.2rem' }}>{item.emoji || '🍔'}</span>
+                            )}
+                            <h3 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '800' }}>{item.name}</h3>
+                          </div>
+                          {(!item.available || isStallClosed) && (
+                            <span className="badge" style={{ background: 'var(--danger, #ff4d4d)', color: 'white', flexShrink: 0 }}>
+                              {isStallClosed ? 'Stall Closed' : 'Sold Out'}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ opacity: 0.8, fontSize: '0.9rem', marginBottom: '18px', color: '#666', lineHeight: '1.4' }}>{item.description}</p>
+                      </div>
+                      <div className="flex justify-between items-center" style={{ gap: '10px' }}>
+                        <span style={{ fontWeight: '900', fontSize: '1.3rem', color: '#2D2D2D' }}>₹{Number(item.price).toFixed(2)}</span>
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            className="ghost"
+                            onClick={() => stall && openStallMenu(stall)}
+                            style={{
+                              padding: '8px 14px',
+                              fontWeight: '800',
+                              fontSize: '0.82rem',
+                              borderColor: 'var(--current-primary)',
+                              color: 'var(--current-primary)',
+                              borderRadius: '16px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            View Stall 👁️
+                          </button>
+
+                          <button
+                            className="accent"
+                            onClick={() => addToCart(item, stall)}
+                            style={{
+                              padding: '8px 16px',
+                              fontWeight: '800',
+                              fontSize: '0.82rem',
+                              borderRadius: '16px',
+                              cursor: 'pointer'
+                            }}
+                            disabled={!item.available || isStallClosed}
+                          >
+                            {item.available && !isStallClosed ? 'Add ➕' : 'Unavailable 🚫'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )
+            ) : stalls.length === 0 ? (
               <div className="empty-state card col-span-full">
                 <h2>No stalls found 🏗️</h2>
                 <p>Try selecting a different food court or category!</p>
@@ -701,7 +885,7 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
                 };
 
                 return (
-                  <div key={stall.id} className={`stall-card ${flippedStalls[stall.id] && !isMobile ? 'is-flipped' : ''}`} style={{ cursor: 'pointer', position: 'relative', ...(!isMobile ? { height: '355px', minHeight: '355px', maxHeight: '355px' } : {}) }} onClick={() => !isMobile ? null : openStallMenu(stall)}>
+                  <div key={stall.id} className={`stall-card status-${status} ${flippedStalls[stall.id] && !isMobile ? 'is-flipped' : ''}`} style={{ cursor: 'pointer', position: 'relative', ...(!isMobile ? { height: '355px', minHeight: '355px', maxHeight: '355px' } : {}) }} onClick={() => !isMobile ? null : openStallMenu(stall)}>
                     {!isMobile ? (
                       <>
                         <div className="stall-card-inner" style={{ height: '100%' }}>

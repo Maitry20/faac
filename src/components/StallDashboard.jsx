@@ -309,7 +309,15 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems} onLogout={onLogout} userBadge="🏪 Stall Vendor" onToggleTheme={onToggleTheme} theme={theme}>
+    <DashboardLayout 
+      sidebarItems={sidebarItems} 
+      onLogout={onLogout} 
+      userBadge="🏪 Stall Vendor" 
+      onToggleTheme={onToggleTheme} 
+      theme={theme}
+      userName={stallProfile?.stall_name || session?.profileData?.stall_name || 'Chef Vendor'}
+      userRole="Vendor"
+    >
       <style>{`
         .modal-overlay {
           position: fixed;
