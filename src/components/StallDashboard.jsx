@@ -1339,6 +1339,52 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                   required 
                 />
 
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div className="mobile-input-label" style={{ marginBottom: 0 }}>Banner Image 📸</div>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="file" 
+                      id="mobile-banner-upload" 
+                      hidden 
+                      accept="image/*" 
+                      onChange={(e) => handleFileUpload(e, 'banner')} 
+                    />
+                    <button 
+                      type="button" 
+                      className="mobile-action-pill" 
+                      style={{ padding: '4px 12px', fontSize: '0.75rem', boxShadow: 'none', background: '#2D2D2D' }}
+                      onClick={() => document.getElementById('mobile-banner-upload').click()}
+                    >
+                      Upload Photo 📁
+                    </button>
+                  </div>
+                </div>
+                
+                {stallProfile.banner_url && (
+                  <div style={{ marginBottom: '12px', position: 'relative', borderRadius: '16px', overflow: 'hidden', height: '120px', border: '2px solid rgba(128,128,128,0.1)' }}>
+                    <img src={stallProfile.banner_url} alt="Banner Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent)', display: 'flex', alignItems: 'flex-end', padding: '12px' }}>
+                      <span style={{ color: 'white', fontSize: '0.75rem', fontWeight: 800 }}>LIVE PREVIEW</span>
+                    </div>
+                  </div>
+                )}
+                
+                <input 
+                  type="text" 
+                  placeholder="Paste image URL or upload above..." 
+                  value={stallProfile.banner_url} 
+                  onChange={e => setStallProfile({...stallProfile, banner_url: e.target.value})} 
+                  className="mobile-form-input"
+                />
+
+                <div className="mobile-input-label">Promotion / Special Offer 📢</div>
+                <input 
+                  placeholder="E.g., 10% off on all burgers today!" 
+                  value={stallProfile.promotion} 
+                  onChange={e => setStallProfile({...stallProfile, promotion: e.target.value})} 
+                  className="mobile-form-input"
+                />
+
                 <div className="mobile-input-label">Min Prep Time (Minutes)</div>
                 <input 
                   type="number" 
@@ -1348,7 +1394,43 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                   required 
                 />
 
-                <div className="mobile-input-label">Stall Description</div>
+                <div className="mobile-input-label">Food Court Name 📍</div>
+                <input 
+                  type="text" 
+                  placeholder="E.g., North Campus Food Court" 
+                  value={stallProfile.food_court} 
+                  onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} 
+                  className="mobile-form-input"
+                  required 
+                />
+
+                <div className="mobile-input-label">Stall Categories</div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  {['Fast Food', 'Asian', 'Healthy', 'Burgers', 'Beverages', 'Desserts'].map(cat => (
+                    <button
+                      type="button"
+                      key={cat}
+                      className="mobile-action-pill"
+                      style={{ 
+                        background: stallProfile.categories?.includes(cat) ? '#FF5A5F' : '#E5E5EA', 
+                        color: stallProfile.categories?.includes(cat) ? '#FFFFFF' : '#2B2B2B',
+                        boxShadow: 'none',
+                        padding: '6px 14px',
+                        fontSize: '0.8rem'
+                      }}
+                      onClick={() => {
+                        const categories = stallProfile.categories || [];
+                        const exists = categories.includes(cat);
+                        const updated = exists ? categories.filter(c => c !== cat) : [...categories, cat];
+                        setStallProfile({...stallProfile, categories: updated});
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mobile-input-label">Stall Description 📝</div>
                 <textarea 
                   value={stallProfile.description} 
                   onChange={e => setStallProfile({ ...stallProfile, description: e.target.value })} 
