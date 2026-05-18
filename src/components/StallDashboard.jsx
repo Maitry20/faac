@@ -82,6 +82,20 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   }, []);
 
   const [stallStatus, setStallStatus] = useState('Open'); // Open, Busy, Closed
+  const [isMobile, setIsMobile] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showMobileAddDish, setShowMobileAddDish] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [orders, setOrders] = useState([]);
   const [historyOrders, setHistoryOrders] = useState([]);
   const [menu, setMenu] = useState([]);
@@ -142,7 +156,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     const today = now.toISOString().split('T')[0];
     
     const allStallOrders = db.orders.filter(o => o.stall_id === session.id);
-    const todayOrders = allStallOrders.filter(o => o.created_at.startsWith(today));
+    const todayOrders = allStallOrders.filter(o => o.created_at && o.created_at.startsWith(today));
     
     const revenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const avgOrderValue = todayOrders.length > 0 ? revenue / todayOrders.length : 0;
@@ -151,7 +165,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
       'Queued': orders.filter(o => o.status === 'Order Received').length,
       'Preparing': orders.filter(o => o.status === 'Cooking' || o.status === 'Cooked').length,
       'Ready': orders.filter(o => o.status === 'Ready to Eat').length,
-      'Finished': historyOrders.filter(o => o.created_at.startsWith(today)).length
+      'Finished': historyOrders.filter(o => o.created_at && o.created_at.startsWith(today)).length
     };
 
     const itemSales = {};
@@ -171,13 +185,13 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     });
 
     const recentFeed = [...allStallOrders]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
       .slice(0, 5)
       .map(o => ({
         id: o.id,
         type: o.status === 'Order Received' ? 'NEW' : (o.status === 'Picked Up' ? 'COMPLETED' : 'UPDATE'),
         message: o.status === 'Order Received' ? `New order #${o.id.slice(0,5)}` : `Order #${o.id.slice(0,5)} is ${o.status}`,
-        time: o.created_at
+        time: o.created_at || new Date().toISOString()
       }));
 
     const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
@@ -278,7 +292,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
 
     const hourlyMap = {};
     allStallOrders.forEach(o => {
-      const hour = new Date(o.created_at).getHours();
+      const hour = new Date(o.created_at || Date.now()).getHours();
       const hourLabel = `${hour}:00`;
       hourlyMap[hourLabel] = (hourlyMap[hourLabel] || 0) + (o.total || 0);
     });
@@ -307,6 +321,1354 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   ];
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  if (isMobile) {
+    const activeOrdersCount = orders.length;
+    const finishedTodayCount = historyOrders.filter(o => o.created_at && o.created_at.startsWith(new Date().toISOString().split('T')[0])).length;
+
+    return (
+      <div className="mobile-app-container" style={{
+        background: '#FFF8F2',
+        minHeight: '100vh',
+        padding: '24px 16px 140px 16px',
+        position: 'relative',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        color: '#2B2B2B',
+        boxSizing: 'border-box',
+        overflowY: 'auto'
+      }}>
+        {/* CSS Encapsulated Style block */}
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+          
+          .mobile-app-container {
+            font-family: 'Outfit', 'Inter', -apple-system, sans-serif !important;
+          }
+          
+          .mobile-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+          }
+          
+          .mobile-nav-btn {
+            background: #FFFFFF;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            cursor: pointer;
+            font-size: 1.3rem;
+            position: relative;
+          }
+          
+          .mobile-bell-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 8px;
+            height: 8px;
+            background: #EF4444;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+          }
+          
+          .mobile-welcome-header {
+            margin-bottom: 24px;
+          }
+          
+          .mobile-welcome-title {
+            font-size: 1.95rem;
+            font-weight: 800;
+            margin: 0;
+            color: #1A1A1A;
+            letter-spacing: -0.5px;
+          }
+          
+          .mobile-welcome-subtitle {
+            font-size: 0.92rem;
+            color: #7C7C7C;
+            margin: 6px 0 0 0;
+            font-weight: 500;
+          }
+          
+          .mobile-status-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 24px rgba(220, 190, 170, 0.1);
+            border: 1px solid rgba(128, 128, 128, 0.03);
+            margin-bottom: 24px;
+            position: relative;
+            cursor: pointer;
+          }
+          
+          .mobile-status-label {
+            font-size: 0.72rem;
+            font-weight: 900;
+            color: #A3A3A3;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+          }
+          
+          .mobile-status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+          }
+          
+          .mobile-status-pill.open { background: #10B981; color: #FFFFFF; }
+          .mobile-status-pill.busy { background: #F59E0B; color: #FFFFFF; }
+          .mobile-status-pill.closed { background: #EF4444; color: #FFFFFF; }
+          
+          .mobile-status-dropdown {
+            position: absolute;
+            top: 68px;
+            right: 20px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            border: 1px solid rgba(128, 128, 128, 0.08);
+            z-index: 1001;
+            width: 140px;
+            overflow: hidden;
+            animation: slideDownMobile 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          
+          @keyframes slideDownMobile {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          
+          .mobile-status-option {
+            padding: 12px 16px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+          }
+          
+          .mobile-status-option:hover {
+            background: rgba(128,128,128,0.05);
+          }
+          
+          .mobile-section-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1A1A1A;
+            margin: 0 0 16px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          
+          .mobile-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(220, 190, 170, 0.06);
+            border: 1px solid rgba(128, 128, 128, 0.03);
+            position: relative;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+          }
+          
+          .mobile-card:active {
+            transform: scale(0.98);
+          }
+          
+          .mobile-revenue-card {
+            background: #FFFFFF;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 12px 30px rgba(220, 190, 170, 0.08);
+            border: 1px solid rgba(128, 128, 128, 0.03);
+            margin-bottom: 24px;
+            position: relative;
+          }
+          
+          .mobile-revenue-icon {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #FEECEE;
+            color: #FF5A5F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+          }
+          
+          .mobile-quick-actions-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+          }
+          
+          .mobile-action-btn {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 12px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 16px rgba(220, 190, 170, 0.04);
+            border: 1px solid rgba(128, 128, 128, 0.02);
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          
+          .mobile-action-btn:active {
+            transform: translateY(2px) scale(0.95);
+          }
+          
+          .mobile-action-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+          }
+          
+          .mobile-action-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #4A4A4A;
+            text-align: center;
+            line-height: 1.2;
+          }
+          
+          .mobile-activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          
+          .mobile-activity-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(220, 190, 170, 0.03);
+            border: 1px solid rgba(128, 128, 128, 0.02);
+          }
+          
+          .mobile-nav-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 16px;
+            right: 16px;
+            height: 68px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 34px;
+            box-shadow: 0 12px 35px rgba(210, 180, 160, 0.22);
+            border: 1px solid rgba(128, 128, 128, 0.06);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding: 0 10px;
+            box-sizing: border-box;
+          }
+          
+          .mobile-nav-item {
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #8E8E93;
+            cursor: pointer;
+            padding: 8px 4px;
+            width: 50px;
+            transition: all 0.2s ease;
+          }
+          
+          .mobile-nav-item.active {
+            color: #FF5A5F;
+          }
+          
+          .mobile-nav-icon {
+            font-size: 1.35rem;
+          }
+          
+          .mobile-nav-label {
+            font-size: 0.62rem;
+            font-weight: 800;
+            margin-top: 3px;
+          }
+          
+          .mobile-add-btn {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #FF6B6B, #FF5A5F);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            border: none;
+            box-shadow: 0 4px 12px rgba(255, 90, 95, 0.25);
+            font-size: 1.8rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 1002;
+          }
+          
+          .mobile-add-btn:active {
+            transform: scale(0.92);
+          }
+          
+          .mobile-drawer-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2000;
+            animation: fadeInMobile 0.25s ease;
+          }
+          
+          .mobile-drawer-panel {
+            position: absolute;
+            top: 0; left: 0;
+            width: 270px;
+            height: 100vh;
+            background: #FFFFFF;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.15);
+            padding: 32px 24px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            animation: slideInLeftMobile 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          
+          @keyframes fadeInMobile { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes slideInLeftMobile {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+          }
+          
+          .mobile-drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+          }
+          
+          .mobile-drawer-close {
+            background: #F5F5F7;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 800;
+          }
+          
+          .mobile-drawer-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 0.98rem;
+            cursor: pointer;
+            margin-bottom: 6px;
+            transition: all 0.2s;
+            color: #2B2B2B;
+          }
+          
+          .mobile-drawer-item.active {
+            background: #FFF1F2;
+            color: #FF5A5F;
+          }
+          
+          .mobile-switch {
+            width: 44px;
+            height: 24px;
+            background: #E5E5EA;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          
+          .mobile-switch.active {
+            background: #10B981;
+          }
+          
+          .mobile-switch-thumb {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+          }
+          
+          .mobile-switch.active .mobile-switch-thumb {
+            left: 22px;
+          }
+          
+          .mobile-menu-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(220,190,170,0.04);
+            border: 1px solid rgba(128,128,128,0.02);
+            margin-bottom: 12px;
+          }
+          
+          .mobile-delete-btn {
+            background: #FEECEE;
+            color: #EF4444;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+          }
+          
+          .mobile-delete-btn:active {
+            transform: scale(0.9);
+          }
+          
+          .mobile-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 2100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            animation: fadeInMobile 0.25s ease;
+          }
+          
+          .mobile-modal-panel {
+            background: #FFFFFF;
+            width: 100%;
+            max-width: 480px;
+            border-top-left-radius: 32px;
+            border-top-right-radius: 32px;
+            padding: 28px 24px 44px 24px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+            box-sizing: border-box;
+            animation: slideUpMobileModal 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+          }
+          
+          @keyframes slideUpMobileModal {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+          }
+          
+          .mobile-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+          }
+          
+          .mobile-input-label {
+            font-weight: 800;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          .mobile-form-input {
+            width: 100%;
+            background: #F5F5F7;
+            border: 1px solid transparent;
+            border-radius: 16px;
+            padding: 14px 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            font-family: inherit;
+          }
+          
+          .mobile-form-input:focus {
+            background: #FFFFFF;
+            border-color: #FF5A5F;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(255, 90, 95, 0.08);
+          }
+          
+          .mobile-submit-btn {
+            background: linear-gradient(135deg, #FF6B6B, #FF5A5F);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 8px 20px rgba(255, 90, 95, 0.3);
+            transition: all 0.2s;
+            margin-top: 12px;
+          }
+          
+          .mobile-submit-btn:active {
+            transform: scale(0.97);
+          }
+          
+          .mobile-order-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 6px 18px rgba(220,190,170,0.05);
+            border: 1px solid rgba(128,128,128,0.03);
+            margin-bottom: 16px;
+          }
+          
+          .mobile-order-item-qty {
+            background: #FFF1F2;
+            color: #FF5A5F;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.75rem;
+          }
+          
+          .mobile-action-pill {
+            background: #FF5A5F;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 800;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(255,90,95,0.2);
+          }
+          
+          .mobile-action-pill:active {
+            transform: scale(0.95);
+          }
+          
+          .mobile-delayed-alert {
+            background: #FEF2F2;
+            border-left: 4px solid #EF4444;
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.05);
+          }
+        `}</style>
+
+        {/* 1. Mobile Top Navbar */}
+        <div className="mobile-navbar">
+          <button className="mobile-nav-btn" onClick={() => setShowMobileDrawer(true)}>☰</button>
+          <div style={{ fontFamily: "'Fredoka One', cursive", fontSize: '1.25rem', color: '#FF5A5F', fontWeight: 'bold' }}>Food at a Click</div>
+          <button className="mobile-nav-btn">
+            🔔
+            <span className="mobile-bell-badge" />
+          </button>
+        </div>
+
+        {/* Dynamic Inner Views */}
+        {view === 'home' && (
+          <>
+            {/* 2. Welcome Back Section */}
+            <div className="mobile-welcome-header">
+              <h2 className="mobile-welcome-title">Welcome back, Chef! 👨‍🍳</h2>
+              <p className="mobile-welcome-subtitle">Here's what's happening at your stall today.</p>
+            </div>
+
+            {/* 3. Stall Status Horizontal Selector Card */}
+            <div className="mobile-status-card" onClick={() => setShowStatusDropdown(!showStatusDropdown)}>
+              <span className="mobile-status-label">Stall Status</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className={`mobile-status-pill ${stallStatus.toLowerCase()}`}>
+                  {stallStatus === 'Open' ? '🟢' : stallStatus === 'Busy' ? '🟡' : '🔴'} {stallStatus}
+                </span>
+                <span style={{ fontSize: '0.6rem', color: '#7C7C7C' }}>▼</span>
+              </div>
+
+              {showStatusDropdown && (
+                <div className="mobile-status-dropdown">
+                  <div className="mobile-status-option" onClick={(e) => {
+                    e.stopPropagation();
+                    setStallStatus('Open');
+                    db.updateProfile(session.id, { ...stallProfile, status: 'Open' });
+                    setShowStatusDropdown(false);
+                    showToast("Stall is now OPEN 🟢");
+                  }}>🟢 Open</div>
+                  <div className="mobile-status-option" onClick={(e) => {
+                    e.stopPropagation();
+                    setStallStatus('Busy');
+                    db.updateProfile(session.id, { ...stallProfile, status: 'Busy' });
+                    setShowStatusDropdown(false);
+                    showToast("Stall is now BUSY 🟡");
+                  }}>🟡 Busy</div>
+                  <div className="mobile-status-option" onClick={(e) => {
+                    e.stopPropagation();
+                    setStallStatus('Closed');
+                    db.updateProfile(session.id, { ...stallProfile, status: 'Closed' });
+                    setShowStatusDropdown(false);
+                    showToast("Stall is now CLOSED 🔴");
+                  }}>🔴 Closed</div>
+                </div>
+              )}
+            </div>
+
+            {/* Delayed Warning Alert if any delayed orders */}
+            {homeData.delayedOrders.length > 0 && (
+              <div className="mobile-delayed-alert">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '1.3rem' }}>⚠️</span>
+                  <div>
+                    <strong style={{ fontSize: '0.85rem', display: 'block', color: '#991B1B' }}>{homeData.delayedOrders.length} Delayed Orders</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#B91C1C', opacity: 0.8 }}>Past Expected Pickup Time</span>
+                  </div>
+                </div>
+                <button className="mobile-action-pill" style={{ background: '#EF4444', fontSize: '0.7rem', padding: '6px 12px', boxShadow: 'none' }} onClick={() => setView('orders')}>
+                  Fix Now
+                </button>
+              </div>
+            )}
+
+            {/* 4. Today Overview Title and 2x2 Grid */}
+            <h3 className="mobile-section-title">Today Overview</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+              <div className="mobile-card" style={{ borderLeft: '4px solid #6366F1', margin: 0, padding: '16px' }}>
+                <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
+                  <div style={{ background: '#EEF2FF', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>📥</div>
+                  <span style={{ fontSize: '0.65rem', background: '#6366F1', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>New</span>
+                </div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#2B2B2B', lineHeight: 1.2 }}>{homeData.statusCounts.Queued}</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#666', marginTop: '4px' }}>Queued Orders</div>
+              </div>
+
+              <div className="mobile-card" style={{ borderLeft: '4px solid #F59E0B', margin: 0, padding: '16px' }}>
+                <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
+                  <div style={{ background: '#FFF7ED', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>🔥</div>
+                  <span style={{ fontSize: '0.65rem', background: '#F59E0B', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>Preparing</span>
+                </div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#2B2B2B', lineHeight: 1.2 }}>{homeData.statusCounts.Preparing}</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#666', marginTop: '4px' }}>Preparing</div>
+              </div>
+
+              <div className="mobile-card" style={{ borderLeft: '4px solid #10B981', margin: 0, padding: '16px' }}>
+                <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
+                  <div style={{ background: '#ECFDF5', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>🎁</div>
+                  <span style={{ fontSize: '0.65rem', background: '#10B981', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>Ready</span>
+                </div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#2B2B2B', lineHeight: 1.2 }}>{homeData.statusCounts.Ready}</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#666', marginTop: '4px' }}>Ready for Pickup</div>
+              </div>
+
+              <div className="mobile-card" style={{ borderLeft: '4px solid #3B82F6', margin: 0, padding: '16px' }}>
+                <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
+                  <div style={{ background: '#EFF6FF', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>✅</div>
+                  <span style={{ fontSize: '0.65rem', background: '#3B82F6', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>Done</span>
+                </div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#2B2B2B', lineHeight: 1.2 }}>{homeData.statusCounts.Finished}</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#666', marginTop: '4px' }}>Finished Today</div>
+              </div>
+            </div>
+
+            {/* 5. Revenue Card */}
+            <div className="mobile-revenue-card">
+              <span className="mobile-revenue-icon">📊</span>
+              <div style={{ fontSize: '0.7rem', fontWeight: '900', color: '#A0A0A0', letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: '8px' }}>Today's Revenue</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#FF5A5F', lineHeight: 1.1 }}>₹{homeData.revenue.toFixed(2)}</div>
+              <div style={{ fontSize: '0.8rem', color: '#777', fontWeight: '600', marginTop: '6px' }}>Total sales from {homeData.todayCount} orders</div>
+              
+              <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '18px 0' }} />
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#2B2B2B' }}>{homeData.todayCount}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#A0A0A0', fontWeight: '700', textTransform: 'uppercase', marginTop: '2px' }}>Orders</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#2B2B2B' }}>₹{homeData.avgOrderValue.toFixed(0)}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#A0A0A0', fontWeight: '700', textTransform: 'uppercase', marginTop: '2px' }}>Avg Value</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 6. Quick Actions */}
+            <h3 className="mobile-section-title">Quick Actions</h3>
+            <div className="mobile-quick-actions-row">
+              <div className="mobile-action-btn" onClick={() => setView('orders')}>
+                <div className="mobile-action-circle" style={{ background: '#FFE4E6' }}>🛎️</div>
+                <span className="mobile-action-label">Active Orders</span>
+              </div>
+              <div className="mobile-action-btn" onClick={() => setView('menu')}>
+                <div className="mobile-action-circle" style={{ background: '#FEF3C7' }}>📋</div>
+                <span className="mobile-action-label">Menu Manager</span>
+              </div>
+              <div className="mobile-action-btn" onClick={() => setView('analytics')}>
+                <div className="mobile-action-circle" style={{ background: '#F3E8FF' }}>📈</div>
+                <span className="mobile-action-label">Analytics</span>
+              </div>
+              <div className="mobile-action-btn" onClick={() => setView('history')}>
+                <div className="mobile-action-circle" style={{ background: '#D1FAE5' }}>🕰️</div>
+                <span className="mobile-action-label">History</span>
+              </div>
+            </div>
+
+            {/* 7. Recent Activities */}
+            <h3 className="mobile-section-title">
+              Recent Activities
+              <span style={{ fontSize: '0.78rem', color: '#FF5A5F', fontWeight: '700' }}>Live Feed</span>
+            </h3>
+            <div className="mobile-activity-list">
+              {homeData.recentFeed.length === 0 ? (
+                <div className="mobile-card" style={{ textAlign: 'center', padding: '20px' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#888' }}>No recent activity yet</span>
+                </div>
+              ) : (
+                homeData.recentFeed.map(feed => (
+                  <div key={feed.id} className="mobile-activity-card">
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div className="mobile-activity-dot" style={{ background: feed.type === 'NEW' ? '#6366F1' : feed.type === 'COMPLETED' ? '#10B981' : '#F59E0B' }} />
+                      <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#2B2B2B' }}>{feed.message}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#909090', marginTop: '2px', fontWeight: '600' }}>{new Date(feed.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: '#CCCCCC', fontWeight: '800' }}>❯</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {view === 'orders' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setView('home')} style={{ background: '#FFFFFF', border: 'none', width: '38px', height: '38px', borderRadius: '12px', cursor: 'pointer', fontWeight: '800' }}>❮</button>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: '800', margin: 0 }}>Incoming Orders ({filteredOrders.length})</h2>
+            </div>
+
+            <input 
+              type="text" 
+              placeholder="Search ID, customer, food..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="mobile-form-input"
+              style={{ marginBottom: '20px' }}
+            />
+
+            {filteredOrders.length === 0 ? (
+              <div className="mobile-card" style={{ textAlign: 'center', padding: '32px' }}>
+                <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>🍳</span>
+                <strong style={{ display: 'block', fontSize: '1.05rem', color: '#2B2B2B' }}>Kitchen is quiet</strong>
+                <span style={{ fontSize: '0.82rem', color: '#888', marginTop: '4px', display: 'block' }}>Waiting for hungry foodies to order!</span>
+              </div>
+            ) : (
+              filteredOrders.map(order => {
+                const isDelayed = new Date(order.pickup_time) < new Date() && order.status !== 'Ready to Eat';
+                const nextStatuses = {
+                  'Order Received': { text: 'Start Cooking 👨‍🍳', icon: '🔥' },
+                  'Cooking': { text: 'Mark Cooked 🍳', icon: '✅' },
+                  'Cooked': { text: 'Ready for Pickup 🎁', icon: '🎉' },
+                  'Ready to Eat': { text: 'Mark Picked Up ✅', icon: 'Picked Up' }
+                };
+                const nextStep = nextStatuses[order.status];
+
+                return (
+                  <div key={order.id} className="mobile-order-card" style={{ borderLeft: isDelayed ? '4px solid #EF4444' : 'none', cursor: 'pointer' }} onClick={() => setSelectedOrder(order)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <strong style={{ fontSize: '0.98rem', color: '#FF5A5F' }}>#{order.id.slice(0, 5).toUpperCase()}</strong>
+                        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '2px', fontWeight: '700' }}>👤 {order.customer_name}</div>
+                      </div>
+                      <span style={{ fontSize: '0.78rem', background: isDelayed ? '#EF4444' : '#F59E0B', color: 'white', padding: '4px 10px', borderRadius: '10px', fontWeight: '800' }}>
+                        ⏰ {new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+
+                    <div style={{ background: '#F5F5F7', padding: '6px 12px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: '800', marginBottom: '12px' }}>
+                      <span>⚡</span> {order.status}
+                    </div>
+
+                    <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '12px 0' }} />
+
+                    <div style={{ margin: '12px 0' }}>
+                      {order.items.map((it, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="mobile-order-item-qty">{it.qty}x</span>
+                            <span>{it.emoji}</span>
+                            <span style={{ fontWeight: '700' }}>{it.name}</span>
+                          </div>
+                          <span style={{ color: '#888' }}>₹{(it.price * it.qty).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '12px 0' }} />
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: '#888', display: 'block', fontWeight: '700' }}>Total Amount</span>
+                        <strong style={{ fontSize: '1.1rem', color: '#FF5A5F' }}>₹{Number(order.total).toFixed(2)}</strong>
+                      </div>
+                      {nextStep && (
+                        <button className="mobile-action-pill" onClick={(e) => { e.stopPropagation(); updateStatus(order.id, order.status); }}>
+                          {nextStep.text}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </>
+        )}
+
+        {view === 'menu' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button onClick={() => setView('home')} style={{ background: '#FFFFFF', border: 'none', width: '38px', height: '38px', borderRadius: '12px', cursor: 'pointer', fontWeight: '800' }}>❮</button>
+                <h2 style={{ fontSize: '1.45rem', fontWeight: '800', margin: 0 }}>Menu Manager</h2>
+              </div>
+              <button className="mobile-action-pill" style={{ padding: '8px 14px', fontSize: '0.75rem' }} onClick={() => setShowMobileAddDish(true)}>
+                + Add Dish
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {menu.length === 0 ? (
+                <div className="mobile-card" style={{ textAlign: 'center', padding: '32px' }}>
+                  <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>📋</span>
+                  <strong style={{ display: 'block', fontSize: '1.05rem', color: '#2B2B2B' }}>No dishes added</strong>
+                  <span style={{ fontSize: '0.82rem', color: '#888', marginTop: '4px', display: 'block' }}>Add dishes to start selling!</span>
+                </div>
+              ) : (
+                menu.map(item => (
+                  <div key={item.id} className="mobile-menu-card">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#F5F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>
+                        {item.photo ? <img src={item.photo} alt={item.name} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} /> : (item.emoji || '🍲')}
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: '0.9rem', color: '#2B2B2B', display: 'block' }}>{item.name}</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#FF5A5F', fontWeight: '800', marginTop: '2px', display: 'block' }}>₹{Number(item.price).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div 
+                        className={`mobile-switch ${item.available ? 'active' : ''}`}
+                        onClick={() => toggleAvailability(item.id)}
+                      >
+                        <div className="mobile-switch-thumb" />
+                      </div>
+                      <button className="mobile-delete-btn" onClick={() => deleteItem(item.id)}>🗑️</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {view === 'analytics' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setView('home')} style={{ background: '#FFFFFF', border: 'none', width: '38px', height: '38px', borderRadius: '12px', cursor: 'pointer', fontWeight: '800' }}>❮</button>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: '800', margin: 0 }}>Analytics</h2>
+            </div>
+
+            <div className="mobile-card" style={{ background: 'linear-gradient(135deg, #FF6B6B, #FF5A5F)', color: 'white', padding: '24px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: '800', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '1px' }}>Total Stall Earnings</span>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: '900', margin: '4px 0 16px 0', lineHeight: 1.1 }}>₹{analytics.totalEarnings.toFixed(2)}</h2>
+              
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.15)', margin: '16px 0' }} />
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: '700' }}>Completed Orders</span>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '900', marginTop: '2px' }}>{analytics.completedOrders}</div>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: '700' }}>Top Selling Dish</span>
+                  <div style={{ fontSize: '1rem', fontWeight: '900', marginTop: '4px', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{analytics.topDish}</div>
+                </div>
+              </div>
+            </div>
+
+            <h3 className="mobile-section-title" style={{ marginTop: '24px' }}>Customer Reviews ({homeData.totalReviews})</h3>
+            <div className="mobile-activity-list">
+              {reviews.length === 0 ? (
+                <div className="mobile-card" style={{ textAlign: 'center', padding: '20px' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#888' }}>No reviews yet</span>
+                </div>
+              ) : (
+                reviews.map(r => (
+                  <div key={r.id} className="mobile-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <strong style={{ fontSize: '0.85rem' }}>👤 {db.profiles.find(p => p.id === r.user_id)?.name || 'Foodie Student'}</strong>
+                      <span style={{ color: '#F59E0B', fontWeight: '800', fontSize: '0.82rem' }}>{'★'.repeat(r.rating)}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#666', lineHeight: 1.4 }}>{r.comment}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {view === 'history' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setView('home')} style={{ background: '#FFFFFF', border: 'none', width: '38px', height: '38px', borderRadius: '12px', cursor: 'pointer', fontWeight: '800' }}>❮</button>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: '800', margin: 0 }}>Order History</h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {historyOrders.length === 0 ? (
+                <div className="mobile-card" style={{ textAlign: 'center', padding: '32px' }}>
+                  <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>🕰️</span>
+                  <strong style={{ display: 'block', fontSize: '1.05rem', color: '#2B2B2B' }}>No order history</strong>
+                  <span style={{ fontSize: '0.82rem', color: '#888', marginTop: '4px', display: 'block' }}>Completed orders will appear here!</span>
+                </div>
+              ) : (
+                historyOrders.map(order => (
+                  <div key={order.id} className="mobile-order-card" style={{ opacity: 0.9 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <strong style={{ color: '#666', fontSize: '0.85rem' }}>#{order.id.slice(0, 5).toUpperCase()}</strong>
+                      <span style={{ fontSize: '0.78rem', color: '#10B981', fontWeight: '800' }}>Completed</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#2B2B2B', marginBottom: '4px' }}>👤 {order.customer_name}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#888' }}>
+                      Picked up at {new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    
+                    <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '10px 0' }} />
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#888' }}>{order.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</span>
+                      <strong style={{ fontSize: '0.98rem', color: '#FF5A5F' }}>₹{Number(order.total).toFixed(2)}</strong>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {view === 'settings' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setView('home')} style={{ background: '#FFFFFF', border: 'none', width: '38px', height: '38px', borderRadius: '12px', cursor: 'pointer', fontWeight: '800' }}>❮</button>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: '800', margin: 0 }}>Stall Settings</h2>
+            </div>
+
+            <div className="mobile-card" style={{ padding: '24px' }}>
+              <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="mobile-input-label">Stall Name</div>
+                <input 
+                  value={stallProfile.stall_name} 
+                  onChange={e => setStallProfile({ ...stallProfile, stall_name: e.target.value })} 
+                  className="mobile-form-input" 
+                  required 
+                />
+
+                <div className="mobile-input-label">Min Prep Time (Minutes)</div>
+                <input 
+                  type="number" 
+                  value={stallProfile.min_pickup_time} 
+                  onChange={e => setStallProfile({ ...stallProfile, min_pickup_time: parseInt(e.target.value) })} 
+                  className="mobile-form-input" 
+                  required 
+                />
+
+                <div className="mobile-input-label">Stall Description</div>
+                <textarea 
+                  value={stallProfile.description} 
+                  onChange={e => setStallProfile({ ...stallProfile, description: e.target.value })} 
+                  className="mobile-form-input"
+                  style={{ minHeight: '80px', fontFamily: 'inherit' }}
+                  required 
+                />
+
+                <button type="submit" className="mobile-submit-btn" style={{ margin: 0 }}>
+                  Save Stall Settings 💾
+                </button>
+              </form>
+            </div>
+
+            <button 
+              className="mobile-submit-btn" 
+              style={{ background: '#FEECEE', color: '#EF4444', boxShadow: 'none', marginTop: '16px', border: '1px solid rgba(239, 68, 68, 0.1)' }}
+              onClick={onLogout}
+            >
+              Logout 🚪
+            </button>
+          </>
+        )}
+
+        {/* 8. Slide-out Hamburger Menu Drawer Overlay */}
+        {showMobileDrawer && (
+          <div className="mobile-drawer-overlay" onClick={() => setShowMobileDrawer(false)}>
+            <div className="mobile-drawer-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="mobile-drawer-header">
+                <div style={{ color: '#FF5A5F', fontFamily: "'Fredoka One', cursive", fontSize: '1.45rem', fontWeight: 'bold' }}>Chef Portal</div>
+                <button className="mobile-drawer-close" onClick={() => setShowMobileDrawer(false)}>✕</button>
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <div className={`mobile-drawer-item ${view === 'home' ? 'active' : ''}`} onClick={() => { setView('home'); setShowMobileDrawer(false); }}>
+                  <span>🏠</span> Home
+                </div>
+                <div className={`mobile-drawer-item ${view === 'orders' ? 'active' : ''}`} onClick={() => { setView('orders'); setShowMobileDrawer(false); }}>
+                  <span>🛍️</span> Active Orders ({orders.length})
+                </div>
+                <div className={`mobile-drawer-item ${view === 'menu' ? 'active' : ''}`} onClick={() => { setView('menu'); setShowMobileDrawer(false); }}>
+                  <span>🍴</span> Menu Manager
+                </div>
+                <div className={`mobile-drawer-item ${view === 'analytics' ? 'active' : ''}`} onClick={() => { setView('analytics'); setShowMobileDrawer(false); }}>
+                  <span>📈</span> Analytics
+                </div>
+                <div className={`mobile-drawer-item ${view === 'history' ? 'active' : ''}`} onClick={() => { setView('history'); setShowMobileDrawer(false); }}>
+                  <span>🕰️</span> Order History
+                </div>
+                <div className={`mobile-drawer-item ${view === 'settings' ? 'active' : ''}`} onClick={() => { setView('settings'); setShowMobileDrawer(false); }}>
+                  <span>⚙️</span> Stall Settings
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#2D2D2D', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1rem' }}>
+                    {(stallProfile.stall_name || 'Chef').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <strong style={{ fontSize: '0.85rem', display: 'block' }}>{stallProfile.stall_name || 'Chef Vendor'}</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#A0A0A0' }}>Vendor</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={onLogout} 
+                  style={{ background: 'transparent', border: 'none', color: '#EF4444', fontWeight: '800', fontSize: '0.85rem', marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: 0 }}
+                >
+                  Logout 🚪
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 9. Floating Bottom Navigation Bar */}
+        <div className="mobile-nav-bar">
+          <button className={`mobile-nav-item ${view === 'home' ? 'active' : ''}`} onClick={() => setView('home')}>
+            <span className="mobile-nav-icon">🏠</span>
+            <span className="mobile-nav-label">Home</span>
+          </button>
+
+          <button className={`mobile-nav-item ${view === 'orders' ? 'active' : ''}`} onClick={() => setView('orders')}>
+            <span className="mobile-nav-icon">🛍️</span>
+            <span className="mobile-nav-label">Orders</span>
+          </button>
+
+          {/* Floating plus add button in center */}
+          <button className="mobile-add-btn" onClick={() => setShowMobileAddDish(true)}>+</button>
+
+          <button className={`mobile-nav-item ${view === 'menu' ? 'active' : ''}`} onClick={() => setView('menu')}>
+            <span className="mobile-nav-icon">🍴</span>
+            <span className="mobile-nav-label">Menu</span>
+          </button>
+
+          <button className={`mobile-nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>
+            <span className="mobile-nav-icon">👤</span>
+            <span className="mobile-nav-label">Settings</span>
+          </button>
+        </div>
+
+        {/* 10. Add New Dish Modal Overlay */}
+        {showMobileAddDish && (
+          <div className="mobile-modal-overlay" onClick={() => setShowMobileAddDish(false)}>
+            <div className="mobile-modal-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="mobile-modal-header">
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>Add New Dish 🍳</h3>
+                <button className="mobile-drawer-close" onClick={() => setShowMobileAddDish(false)}>✕</button>
+              </div>
+
+              <form onSubmit={(e) => {
+                handleAddItem({ preventDefault: () => {} });
+                setShowMobileAddDish(false);
+              }}>
+                <div className="mobile-input-label">Dish Name</div>
+                <input 
+                  type="text" 
+                  value={newItem.name} 
+                  onChange={e => {
+                    const name = e.target.value;
+                    const detectedEmoji = detectEmoji(name);
+                    setNewItem(prev => ({ ...prev, name, emoji: detectedEmoji }));
+                  }} 
+                  className="mobile-form-input" 
+                  required 
+                />
+
+                <div className="mobile-input-label">Price (₹)</div>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={newItem.price} 
+                  onChange={e => setNewItem({ ...newItem, price: e.target.value })} 
+                  className="mobile-form-input" 
+                  required 
+                />
+
+                <div className="mobile-input-label">Category</div>
+                <select 
+                  value={newItem.category} 
+                  onChange={e => setNewItem({ ...newItem, category: e.target.value })} 
+                  className="mobile-form-input"
+                  style={{ height: '48px' }}
+                >
+                  {categoriesList.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+
+                <div className="mobile-input-label">Description</div>
+                <textarea 
+                  value={newItem.description} 
+                  onChange={e => setNewItem({ ...newItem, description: e.target.value })} 
+                  className="mobile-form-input" 
+                  style={{ minHeight: '60px', fontFamily: 'inherit' }}
+                  required 
+                />
+
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                  <button type="button" className="mobile-action-pill" style={{ background: photoType === 'emoji' ? '#FF5A5F' : '#E5E5EA', color: photoType === 'emoji' ? 'white' : '#2B2B2B', fontSize: '0.72rem', padding: '8px 12px', boxShadow: 'none' }} onClick={() => setPhotoType('emoji')}>Emoji Icon</button>
+                  <button type="button" className="mobile-action-pill" style={{ background: photoType === 'upload' ? '#FF5A5F' : '#E5E5EA', color: photoType === 'upload' ? 'white' : '#2B2B2B', fontSize: '0.72rem', padding: '8px 12px', boxShadow: 'none' }} onClick={() => setPhotoType('upload')}>Photo Upload</button>
+                </div>
+
+                {photoType === 'emoji' ? (
+                  <>
+                    <div className="mobile-input-label">Emoji Icon (Auto-suggested)</div>
+                    <input 
+                      value={newItem.emoji} 
+                      onChange={e => setNewItem({ ...newItem, emoji: e.target.value })} 
+                      className="mobile-form-input" 
+                      required 
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="mobile-input-label">Photo URL or Upload</div>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="https://images.unsplash.com/..." 
+                        value={newItem.photo} 
+                        onChange={e => setNewItem({ ...newItem, photo: e.target.value })} 
+                        className="mobile-form-input" 
+                        style={{ flex: 1, margin: 0 }}
+                        required 
+                      />
+                      <input 
+                        type="file" 
+                        id="mobile-menu-upload" 
+                        hidden 
+                        accept="image/*" 
+                        onChange={(e) => handleFileUpload(e, 'menu')} 
+                      />
+                      <button 
+                        type="button" 
+                        className="mobile-action-pill" 
+                        style={{ padding: '0 16px', background: '#2D2D2D', fontSize: '0.78rem', boxShadow: 'none' }} 
+                        onClick={() => document.getElementById('mobile-menu-upload').click()}
+                      >
+                        File
+                      </button>
+                    </div>
+                    {newItem.photo && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <img src={newItem.photo} alt="Preview" style={{ width: '100px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <button type="submit" className="mobile-submit-btn">
+                  Add Item To Menu 🍳
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+        {/* Mobile Order Detail Bottom Modal Sheet */}
+        {selectedOrder && (
+          <div className="mobile-modal-overlay" onClick={() => setSelectedOrder(null)}>
+            <div className="mobile-modal-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="mobile-modal-header">
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.65rem', background: '#FF5A5F', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>Order Detail</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#888' }}>#{selectedOrder.id.slice(0, 8).toUpperCase()}</span>
+                  </div>
+                  <h3 style={{ fontSize: '1.45rem', fontWeight: '800', margin: 0, color: '#2B2B2B' }}>{selectedOrder.customer_name}</h3>
+                </div>
+                <button className="mobile-drawer-close" onClick={() => setSelectedOrder(null)}>✕</button>
+              </div>
+
+              <div style={{ margin: '14px 0', fontSize: '0.85rem', color: '#666', fontWeight: '700' }}>
+                ⏰ Expected Pickup: <span style={{ color: '#FF5A5F' }}>{new Date(selectedOrder.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+
+              <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '16px 0' }} />
+
+              <div style={{ maxHeight: '220px', overflowY: 'auto', marginBottom: '16px' }} className="hide-scrollbar">
+                <h4 style={{ fontSize: '0.78rem', fontWeight: '900', color: '#909090', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Order Items</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {selectedOrder.items.map((it, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className="mobile-order-item-qty">{it.qty}x</span>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#F5F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
+                          {it.photo ? <img src={it.photo} alt={it.name} style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} /> : (it.emoji || '🍲')}
+                        </div>
+                        <span style={{ fontWeight: '700', color: '#2B2B2B' }}>{it.name}</span>
+                      </div>
+                      <span style={{ fontWeight: '700', color: '#666' }}>₹{(it.price * it.qty).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedOrder.special_instructions && (
+                  <div style={{ 
+                    background: '#FFF1F2', 
+                    padding: '12px 14px', 
+                    borderRadius: '12px', 
+                    border: '1px solid rgba(255, 90, 95, 0.15)',
+                    marginTop: '16px',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    color: '#FF5A5F'
+                  }}>
+                    📝 Notes: "{selectedOrder.special_instructions}"
+                  </div>
+                )}
+              </div>
+
+              <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '16px 0' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: '700' }}>Total Amount</span>
+                <strong style={{ fontSize: '1.25rem', color: '#FF5A5F', fontWeight: '900' }}>₹{Number(selectedOrder.total).toFixed(2)}</strong>
+              </div>
+
+              <div style={{ marginTop: '24px' }}>
+                <div style={{ marginBottom: '24px', padding: '0 4px' }}>
+                  <StatusStepper 
+                    currentStatus={selectedOrder.status} 
+                    onStatusClick={(newStatus) => {
+                      db.updateOrderStatus(selectedOrder.id, newStatus);
+                      setSelectedOrder({...selectedOrder, status: newStatus});
+                      showToast(`Order status jumped to: ${newStatus} ✨`);
+                    }}
+                  />
+                </div>
+                
+                {selectedOrder.status !== 'Ready to Eat' ? (
+                  <button 
+                    className="mobile-submit-btn" 
+                    style={{ margin: 0 }}
+                    onClick={() => {
+                      updateStatus(selectedOrder.id, selectedOrder.status);
+                      const nextIdx = STATUSES.indexOf(selectedOrder.status) + 1;
+                      if (nextIdx < STATUSES.length) {
+                        setSelectedOrder({...selectedOrder, status: STATUSES[nextIdx]});
+                      }
+                    }}
+                  >
+                    {(() => {
+                      const labels = {
+                        'Order Received': 'Start Cooking 👨‍🍳',
+                        'Cooking': 'Mark Cooked 🍳',
+                        'Cooked': 'Ready for Pickup 🎁'
+                      };
+                      return labels[selectedOrder.status] || 'Next Step';
+                    })()}
+                  </button>
+                ) : (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '14px', 
+                    background: '#10B981', 
+                    color: 'white', 
+                    borderRadius: '16px',
+                    fontWeight: '800',
+                    fontSize: '0.92rem'
+                  }}>
+                    ✅ Ready for Pickup
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout 
