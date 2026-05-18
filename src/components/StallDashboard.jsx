@@ -104,6 +104,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   const [stallProfile, setStallProfile] = useState({ stall_name: '', min_pickup_time: 10, promotion: '', banner_url: '', description: '', categories: ['Fast Food'], food_court: 'North Food Court' });
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [customFoodCourtMode, setCustomFoodCourtMode] = useState(false);
 
   const [reviews, setReviews] = useState([]);
 
@@ -141,10 +142,13 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
         banner_url: profile.banner_url || '',
         description: profile.description || '',
         categories: profile.categories || ['Fast Food'],
-        food_court: profile.food_court || 'North Food Court',
+        food_court: profile.food_court || (db.foodCourts && db.foodCourts.length > 0 ? db.foodCourts[0] : 'North Food Court'),
         status: profile.status || 'Open'
       });
       setStallStatus(profile.status || 'Open');
+      if (profile.food_court && db.foodCourts && !db.foodCourts.includes(profile.food_court)) {
+        setCustomFoodCourtMode(true);
+      }
     }
 
     if (db.reviews) {
@@ -1395,14 +1399,50 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                 />
 
                 <div className="mobile-input-label">Food Court Name 📍</div>
-                <input 
-                  type="text" 
-                  placeholder="E.g., North Campus Food Court" 
-                  value={stallProfile.food_court} 
-                  onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} 
-                  className="mobile-form-input"
-                  required 
-                />
+                {!customFoodCourtMode ? (
+                  <select 
+                    value={stallProfile.food_court} 
+                    onChange={e => {
+                      if (e.target.value === 'OTHER_CUSTOM') {
+                        setCustomFoodCourtMode(true);
+                        setStallProfile({...stallProfile, food_court: ''});
+                      } else {
+                        setStallProfile({...stallProfile, food_court: e.target.value});
+                      }
+                    }} 
+                    className="mobile-form-input"
+                    required 
+                  >
+                    {db.foodCourts?.map(fc => (
+                      <option key={fc} value={fc}>{fc}</option>
+                    ))}
+                    <option value="OTHER_CUSTOM">Other (Add Custom)</option>
+                  </select>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Type your custom food court..." 
+                      value={stallProfile.food_court} 
+                      onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} 
+                      className="mobile-form-input"
+                      style={{ marginBottom: 0, flex: 1 }}
+                      required 
+                      autoFocus
+                    />
+                    <button 
+                      type="button" 
+                      className="mobile-action-pill" 
+                      style={{ background: '#E5E5EA', color: '#2B2B2B', boxShadow: 'none' }}
+                      onClick={() => {
+                        setCustomFoodCourtMode(false);
+                        setStallProfile({...stallProfile, food_court: db.foodCourts?.[0] || ''});
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
 
                 <div className="mobile-input-label">Stall Categories</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -2705,14 +2745,48 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
             <input type="number" value={stallProfile.min_pickup_time} onChange={e => setStallProfile({...stallProfile, min_pickup_time: parseInt(e.target.value)})} required />
 
             <label>Food Court Name 📍</label>
-            <input 
-              type="text" 
-              placeholder="E.g., North Campus Food Court" 
-              value={stallProfile.food_court} 
-              onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} 
-              style={{ marginBottom: '24px' }} 
-              required 
-            />
+            {!customFoodCourtMode ? (
+              <select 
+                value={stallProfile.food_court} 
+                onChange={e => {
+                  if (e.target.value === 'OTHER_CUSTOM') {
+                    setCustomFoodCourtMode(true);
+                    setStallProfile({...stallProfile, food_court: ''});
+                  } else {
+                    setStallProfile({...stallProfile, food_court: e.target.value});
+                  }
+                }} 
+                style={{ marginBottom: '24px' }} 
+                required 
+              >
+                {db.foodCourts?.map(fc => (
+                  <option key={fc} value={fc}>{fc}</option>
+                ))}
+                <option value="OTHER_CUSTOM">Other (Add Custom)</option>
+              </select>
+            ) : (
+              <div className="flex gap-2" style={{ marginBottom: '24px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Type your custom food court..." 
+                  value={stallProfile.food_court} 
+                  onChange={e => setStallProfile({...stallProfile, food_court: e.target.value})} 
+                  style={{ margin: 0, flex: 1 }} 
+                  required 
+                  autoFocus
+                />
+                <button 
+                  type="button" 
+                  className="ghost" 
+                  onClick={() => {
+                    setCustomFoodCourtMode(false);
+                    setStallProfile({...stallProfile, food_court: db.foodCourts?.[0] || ''});
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
 
             <label>Stall Categories</label>
             <div className="flex gap-2" style={{ flexWrap: 'wrap', marginBottom: '24px' }}>

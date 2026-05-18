@@ -10,10 +10,10 @@ export default function AdminDashboard({ db, onLogout, showToast, onToggleTheme,
     if (typeof window !== 'undefined') {
       const parts = window.location.pathname.split('/');
       const slug = parts[parts.length - 1];
-      return ['overview', 'stalls', 'orders'].includes(slug) ? slug : 'overview';
+      return ['overview', 'stalls', 'orders', 'food-courts'].includes(slug) ? slug : 'overview';
     }
     return 'overview';
-  }); // overview, stalls, orders
+  }); // overview, stalls, orders, food-courts
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -31,7 +31,7 @@ export default function AdminDashboard({ db, onLogout, showToast, onToggleTheme,
       } else {
         const parts = window.location.pathname.split('/');
         const slug = parts[parts.length - 1];
-        setActiveTab(['overview', 'stalls', 'orders'].includes(slug) ? slug : 'overview');
+        setActiveTab(['overview', 'stalls', 'orders', 'food-courts'].includes(slug) ? slug : 'overview');
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -41,6 +41,7 @@ export default function AdminDashboard({ db, onLogout, showToast, onToggleTheme,
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [stallFilter, setStallFilter] = useState('All');
+  const [newFoodCourt, setNewFoodCourt] = useState('');
 
   useEffect(() => {
     setStalls(db.profiles.filter(p => p.role === 'stall'));
@@ -131,6 +132,7 @@ export default function AdminDashboard({ db, onLogout, showToast, onToggleTheme,
             <button className={activeTab === 'overview' ? 'primary' : 'ghost'} style={{ padding: '6px 16px', fontSize: '0.9rem' }} onClick={() => setActiveTab('overview')}>Overview</button>
             <button className={activeTab === 'stalls' ? 'primary' : 'ghost'} style={{ padding: '6px 16px', fontSize: '0.9rem' }} onClick={() => setActiveTab('stalls')}>Manage Stalls</button>
             <button className={activeTab === 'orders' ? 'primary' : 'ghost'} style={{ padding: '6px 16px', fontSize: '0.9rem' }} onClick={() => setActiveTab('orders')}>All Orders</button>
+            <button className={activeTab === 'food-courts' ? 'primary' : 'ghost'} style={{ padding: '6px 16px', fontSize: '0.9rem' }} onClick={() => setActiveTab('food-courts')}>Food Courts</button>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -410,6 +412,64 @@ export default function AdminDashboard({ db, onLogout, showToast, onToggleTheme,
                   );
                 })
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'food-courts' && (
+          <div className="animated-list">
+            <h2 style={{ fontSize: '2rem', marginBottom: '24px' }}>Manage Food Courts 📍</h2>
+            <div className="card flex-col" style={{ maxWidth: '600px', margin: '0 auto' }}>
+              <div className="flex gap-2" style={{ marginBottom: '24px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Enter new food court name..." 
+                  value={newFoodCourt} 
+                  onChange={e => setNewFoodCourt(e.target.value)} 
+                  style={{ flex: 1, margin: 0 }} 
+                />
+                <button 
+                  className="primary" 
+                  style={{ padding: '0 24px' }} 
+                  onClick={() => {
+                    if (newFoodCourt.trim()) {
+                      if (db.foodCourts.includes(newFoodCourt.trim())) {
+                        showToast("Food court already exists!", "error");
+                        return;
+                      }
+                      db.addFoodCourt(newFoodCourt.trim());
+                      setNewFoodCourt('');
+                      showToast("Food court added successfully! ✨", "success");
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+
+              <div className="flex-col gap-2">
+                {db.foodCourts && db.foodCourts.length > 0 ? (
+                  db.foodCourts.map(fc => (
+                    <div key={fc} className="flex justify-between items-center" style={{ padding: '12px 16px', background: 'var(--current-surface-hover)', borderRadius: '12px' }}>
+                      <span style={{ fontWeight: 'bold' }}>{fc}</span>
+                      <button 
+                        className="ghost" 
+                        style={{ color: '#EF4444', padding: '6px 12px' }} 
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete "${fc}"?`)) {
+                            db.deleteFoodCourt(fc);
+                            showToast("Food court deleted", "success");
+                          }
+                        }}
+                      >
+                        Delete 🗑️
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ opacity: 0.5, textAlign: 'center', padding: '24px' }}>No food courts added yet.</div>
+                )}
+              </div>
             </div>
           </div>
         )}

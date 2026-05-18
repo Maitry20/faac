@@ -24,6 +24,17 @@ const INITIAL_MOCK_DATA = {
   ],
   reviews: [
     { id: 'rev-1', order_id: 'ord-102', stall_id: 's2', user_id: 'u1', rating: 5, comment: 'Absolutely authentic and delicious! Highly recommend.', created_at: new Date(Date.now() - 20 * 60000).toISOString() }
+  ],
+  foodCourts: [
+    'Main Food Court',
+    'Greenzy',
+    'Chattore',
+    'New canteen',
+    'Capitol',
+    'Size zero',
+    'Kathi junction',
+    'Medical canteen',
+    'Rain forest Retreat'
   ]
 };
 
@@ -57,7 +68,13 @@ export const AppProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        try { return JSON.parse(saved); } catch (e) { }
+        try { 
+          const parsed = JSON.parse(saved); 
+          if (!parsed.foodCourts) {
+            parsed.foodCourts = INITIAL_MOCK_DATA.foodCourts;
+          }
+          return parsed;
+        } catch (e) { }
       }
     }
     return INITIAL_MOCK_DATA;
@@ -182,7 +199,8 @@ export const AppProvider = ({ children }) => {
                 profiles: profiles.length > 0 ? profiles : INITIAL_MOCK_DATA.profiles,
                 menuItems: menuItems.length > 0 ? menuItems : INITIAL_MOCK_DATA.menuItems,
                 orders,
-                reviews
+                reviews,
+                foodCourts: INITIAL_MOCK_DATA.foodCourts
               };
               setDbData(loadedData);
               localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedData));
@@ -288,6 +306,15 @@ export const AppProvider = ({ children }) => {
     menuItems: dbData.menuItems,
     orders: dbData.orders,
     reviews: dbData.reviews,
+    foodCourts: dbData.foodCourts || INITIAL_MOCK_DATA.foodCourts,
+
+    addFoodCourt: (name) => {
+      saveDb(d => ({ ...d, foodCourts: [...(d.foodCourts || INITIAL_MOCK_DATA.foodCourts), name] }));
+    },
+
+    deleteFoodCourt: (name) => {
+      saveDb(d => ({ ...d, foodCourts: (d.foodCourts || INITIAL_MOCK_DATA.foodCourts).filter(fc => fc !== name) }));
+    },
 
     addProfile: (p) => {
       saveDb(d => ({ ...d, profiles: [...d.profiles, p] }));
