@@ -103,6 +103,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
   const [photoType, setPhotoType] = useState('emoji'); // 'emoji' vs 'upload'
   const [stallProfile, setStallProfile] = useState({ stall_name: '', min_pickup_time: 10, promotion: '', banner_url: '', description: '', categories: ['Fast Food'], food_court: 'North Food Court' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const [reviews, setReviews] = useState([]);
 
@@ -308,7 +309,15 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
     const matchesId = (o.id || '').toLowerCase().includes(query);
     const matchesCustomer = (o.customer_name || '').toLowerCase().includes(query);
     const matchesItem = o.items.some(i => (i.name || '').toLowerCase().includes(query));
-    return matchesId || matchesCustomer || matchesItem;
+    const matchesSearch = matchesId || matchesCustomer || matchesItem;
+
+    let matchesStatus = true;
+    if (statusFilter === 'Queued') matchesStatus = o.status === 'Order Received';
+    else if (statusFilter === 'Preparing') matchesStatus = o.status === 'Cooking' || o.status === 'Cooked';
+    else if (statusFilter === 'Ready') matchesStatus = o.status === 'Ready to Eat';
+    else if (statusFilter !== 'All') matchesStatus = o.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
 
   const sidebarItems = [
@@ -990,7 +999,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
             {/* 4. Today Overview Title and 2x2 Grid */}
             <h3 className="mobile-section-title">Today Overview</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
-              <div className="mobile-card" style={{ borderLeft: '4px solid #6366F1', margin: 0, padding: '16px' }}>
+              <div className="mobile-card" style={{ borderLeft: '4px solid #6366F1', margin: 0, padding: '16px', cursor: 'pointer' }} onClick={() => { setView('orders'); setStatusFilter('Queued'); }}>
                 <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
                   <div style={{ background: '#EEF2FF', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>📥</div>
                   <span style={{ fontSize: '0.65rem', background: '#6366F1', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>New</span>
@@ -999,7 +1008,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                 <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#666', marginTop: '4px' }}>Queued Orders</div>
               </div>
 
-              <div className="mobile-card" style={{ borderLeft: '4px solid #F59E0B', margin: 0, padding: '16px' }}>
+              <div className="mobile-card" style={{ borderLeft: '4px solid #F59E0B', margin: 0, padding: '16px', cursor: 'pointer' }} onClick={() => { setView('orders'); setStatusFilter('Preparing'); }}>
                 <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
                   <div style={{ background: '#FFF7ED', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>🔥</div>
                   <span style={{ fontSize: '0.65rem', background: '#F59E0B', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>Preparing</span>
@@ -1008,7 +1017,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                 <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#666', marginTop: '4px' }}>Preparing</div>
               </div>
 
-              <div className="mobile-card" style={{ borderLeft: '4px solid #10B981', margin: 0, padding: '16px' }}>
+              <div className="mobile-card" style={{ borderLeft: '4px solid #10B981', margin: 0, padding: '16px', cursor: 'pointer' }} onClick={() => { setView('orders'); setStatusFilter('Ready'); }}>
                 <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
                   <div style={{ background: '#ECFDF5', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>🎁</div>
                   <span style={{ fontSize: '0.65rem', background: '#10B981', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>Ready</span>
@@ -1017,7 +1026,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
                 <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#666', marginTop: '4px' }}>Ready for Pickup</div>
               </div>
 
-              <div className="mobile-card" style={{ borderLeft: '4px solid #3B82F6', margin: 0, padding: '16px' }}>
+              <div className="mobile-card" style={{ borderLeft: '4px solid #3B82F6', margin: 0, padding: '16px', cursor: 'pointer' }} onClick={() => setView('history')}>
                 <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
                   <div style={{ background: '#EFF6FF', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>✅</div>
                   <span style={{ fontSize: '0.65rem', background: '#3B82F6', color: 'white', padding: '3px 8px', borderRadius: '12px', fontWeight: '800' }}>Done</span>
@@ -1924,7 +1933,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
           )}
 
           <div className="home-grid">
-            <div className="stat-card" style={{ borderLeft: '6px solid #6366F1' }}>
+            <div className="stat-card" style={{ borderLeft: '6px solid #6366F1', cursor: 'pointer' }} onClick={() => { setView('orders'); setStatusFilter('Queued'); }}>
               <div className="flex justify-between items-center">
                 <span style={{ fontSize: '2.5rem' }}>📥</span>
                 <span className="badge" style={{ background: '#6366F1' }}>New</span>
@@ -1933,7 +1942,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
               <div style={{ opacity: 0.7, fontWeight: 700 }}>Queued Orders</div>
             </div>
 
-            <div className="stat-card" style={{ borderLeft: '6px solid #F59E0B' }}>
+            <div className="stat-card" style={{ borderLeft: '6px solid #F59E0B', cursor: 'pointer' }} onClick={() => { setView('orders'); setStatusFilter('Preparing'); }}>
               <div className="flex justify-between items-center">
                 <span style={{ fontSize: '2.5rem' }}>🔥</span>
                 <span className="badge" style={{ background: '#F59E0B' }}>Preparing</span>
@@ -1942,7 +1951,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
               <div style={{ opacity: 0.7, fontWeight: 700 }}>Preparing</div>
             </div>
 
-            <div className="stat-card" style={{ borderLeft: '6px solid #10B981' }}>
+            <div className="stat-card" style={{ borderLeft: '6px solid #10B981', cursor: 'pointer' }} onClick={() => { setView('orders'); setStatusFilter('Ready'); }}>
               <div className="flex justify-between items-center">
                 <span style={{ fontSize: '2.5rem' }}>🎁</span>
                 <span className="badge" style={{ background: '#10B981' }}>Ready</span>
@@ -1951,7 +1960,7 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
               <div style={{ opacity: 0.7, fontWeight: 700 }}>Ready for Pickup</div>
             </div>
 
-            <div className="stat-card" style={{ borderLeft: '6px solid #3B82F6' }}>
+            <div className="stat-card" style={{ borderLeft: '6px solid #3B82F6', cursor: 'pointer' }} onClick={() => setView('history')}>
               <div className="flex justify-between items-center">
                 <span style={{ fontSize: '2.5rem' }}>✅</span>
                 <span className="badge" style={{ background: '#3B82F6' }}>Done</span>
@@ -2082,13 +2091,19 @@ export default function StallDashboard({ db, session, showToast, onLogout, onTog
         <div className="animated-list">
           <div className="flex justify-between items-center" style={{ marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
             <h2 style={{ fontSize: '2rem', margin: 0 }}>Incoming Orders</h2>
-            <div className="flex gap-2 items-center" style={{ width: '100%', maxWidth: '350px' }}>
+            <div className="flex gap-2 items-center" style={{ width: '100%', maxWidth: '400px' }}>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '8px 16px', borderRadius: '12px', background: 'var(--current-card)', border: '1px solid rgba(128,128,128,0.2)', flexShrink: 0 }}>
+                <option value="All">All</option>
+                <option value="Queued">Queued</option>
+                <option value="Preparing">Preparing</option>
+                <option value="Ready">Ready</option>
+              </select>
               <input 
                 type="text" 
                 placeholder="Search orders (ID, foodie, dish)..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ margin: 0 }}
+                style={{ margin: 0, flex: 1 }}
               />
             </div>
           </div>
