@@ -140,6 +140,15 @@ export default function UserDashboard({ db, session, showToast, onLogout, onTogg
     setCurrentBanner(prev => (prev + 1) % bannerSlides.length);
   };
 
+  useEffect(() => {
+    if (view === 'home') {
+      const interval = setInterval(() => {
+        setCurrentBanner(prev => (prev + 1) % bannerSlides.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [view, bannerSlides.length]);
+
   const toggleFlip = (e, id) => {
     e.stopPropagation();
     setFlippedStalls(prev => ({ ...prev, [id]: !prev[id] }));
